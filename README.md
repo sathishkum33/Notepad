@@ -1,9 +1,8 @@
-
-def factorial(n):
-    if n == 0:
-        return 1
-    else:
-        return n * factorial(n-1)
-number = 5
-result = factorial(number)
-print(f"The factorial of {number} is: {result}")
+version: "3.0"
+nlu:
+- intent: check_hostname
+  examples: |
+    - Is {hostname} in the database?
+    - Find information for {hostname}
+    - Can you fetch details for {hostname}?
+    - What details do you have for {hostname}?
