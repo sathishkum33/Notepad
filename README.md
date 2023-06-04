@@ -1,22 +1,22 @@
-#chat1 .card-body {
-  background-color: #f0f0f0;
-}
+from typing import Any, Text, Dict, List
+from rasa_sdk import Action, Tracker
+from rasa_sdk.executor import CollectingDispatcher
 
-#chat1 .card-body .message-bubble {
-  background-color: #ffffff;
-  border-radius: 50px;
-  padding: 10px;
-  margin-bottom: 10px;
-}
+class CheckConfidenceAction(Action):
+    def name(self) -> Text:
+        return "custom_actions.CheckConfidenceAction"
 
-#chat1 .card-body .message-bubble.sent {
-  background-color: #dcf8c6;
-}
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        confidence_threshold = 0.6
 
-#chat1 .card-body .message-bubble.received {
-  background-color: #ffffff;
-}
+        last_user_message = tracker.latest_message.get("text")
+        last_intent_confidence = tracker.latest_message.intent.get("confidence")
 
-#chat1 .card-body .message-bubble:last-child {
-  margin-bottom: 0;
-}
+        if last_intent_confidence < confidence_threshold:
+            # Respond with default message
+            dispatcher.utter_message("I'm sorry, I didn't understand that.")
+        else:
+            # Respond with the matched intent
+            dispatcher.utter_message(f"You said: {last_user_message}. I understood it correctly!")
+
+        return []
