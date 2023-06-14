@@ -1,51 +1,20 @@
-<--
-<div class="container">
-  <div class="chatbot-container">
-    <div class="chatbot-circle">
-      <span class="chatbot-text">chatbot</span>
-    </div>
-  </div>
-</div>
 
--->
-.container {
-  position: relative;
-}
-
-.chatbot-container {
-  position: absolute;
-  top: 20px; /* Adjust the positioning as per your requirements */
-  right: 20px; /* Adjust the positioning as per your requirements */
-}
-
-.chatbot-circle {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background-color: #007bff;
-  animation: pulse 1s infinite;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
+<style>
+  .card-body::-webkit-scrollbar {
+    width: 10px;
   }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
 
-.chatbot-text {
-  position: absolute;
-  color: #fff;
-  font-size: 16px;
-  text-align: center;
-  transform: rotate(-45deg);
-}
+  .card-body::-webkit-scrollbar-track {
+    background-color: #f5f5f5;
+    border-radius: 5px;
+  }
+
+  .card-body::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 5px;
+  }
+
+  .card-body::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+  }
+</style>
