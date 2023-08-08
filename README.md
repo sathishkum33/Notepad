@@ -8,25 +8,7 @@
     <%
         Dim objNetwork
         Set objNetwork = CreateObject("WScript.Network")
-        Dim objShell
-        Set objShell = CreateObject("WScript.Shell")
-        
-        Dim strHostName
-        strHostName = objNetwork.ComputerName
-        
-        Dim strDomain
-        strDomain = objShell.ExpandEnvironmentStrings("%USERDNSDOMAIN%")
-        
-        Dim strFQDN
-        If strDomain <> "" Then
-            strFQDN = strHostName & "." & strDomain
-        Else
-            strFQDN = strHostName
-        End If
-        
-        Response.Write "FQDN: " & strFQDN
-        
-        Set objShell = Nothing
+        Response.Write "FQDN: " & objNetwork.UserDomain & "\" & objNetwork.ComputerName
         Set objNetwork = Nothing
     %>
 </body>
