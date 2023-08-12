@@ -19,13 +19,19 @@ try:
     connection = psycopg2.connect(**db_params)
     cursor = connection.cursor()
 
-    # This line should raise an exception if there's a syntax error
-    cursor.execute(sql.SQL(sql_code))
+    # Split SQL statements into individual queries
+    sql_statements = sql_code.split(';')
+
+    for statement in sql_statements:
+        try:
+            if statement.strip():  # Avoid empty statements
+                cursor.execute(sql.SQL(statement))
+        except (errors.SyntaxError, Exception) as e:
+            print("Error:", e)
+            print("Query:", statement)
+            print("=" * 40)
 
     cursor.close()
     connection.close()
-    print("No syntax errors found.")
-except errors.SyntaxError as e:
-    print("Syntax error detected:", e)
 except Exception as e:
     print("An error occurred:", e)
