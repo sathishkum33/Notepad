@@ -1,15 +1,10 @@
-from sqlfluff.core import Linter
+import sqlparse
 
-sql_file_path = 'your_sql_file.sql'
+sql_code = "SELECT first_name last_name FROM employees WHERE department_id = 5;"
 
-with open(sql_file_path, 'r') as sql_file:
-    sql_code = sql_file.read()
-
-linter = Linter()
-violations = linter.lint_string(sql_code)
-
-if not violations:
-    print("No syntax errors or linting issues found.")
-else:
-    for v in violations:
-        print(v)
+parsed = sqlparse.parse(sql_code)
+for statement in parsed:
+    if statement.is_valid():
+        print("Valid SQL:", statement)
+    else:
+        print("Invalid SQL:", statement)
