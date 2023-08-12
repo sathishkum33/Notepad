@@ -1,38 +1,19 @@
-function verifySyntax() {
-    $.ajax({
-        url: '/verify_syntax/',
-        method: 'GET',
-        success: function(data) {
-            if (data.status === 'success') {
-                $('#syntax-status').text('Syntax Verified');
-                verifyDB();
-            } else {
-                $('#syntax-status').text('Syntax Verification Failed');
-            }
-        },
-        error: function(error) {
-            console.error('Error:', error);
-        }
-    });
-}
+from django.http import JsonResponse
 
-function verifyDB() {
-    $.ajax({
-        url: '/verify_db/',
-        method: 'GET',
-        success: function(data) {
-            if (data.status === 'success') {
-                $('#db-status').text('DB Details Verified');
-                $('#progress-text').text('Operations Complete!');
-            } else {
-                $('#db-status').text('DB Details Verification Failed');
-            }
-        },
-        error: function(error) {
-            console.error('Error:', error);
-        }
-    });
-}
+def verify_syntax(request):
+    # Perform syntax verification
+    # Simulate success for demonstration
+    success = True
+    if success:
+        return JsonResponse({'status': 'success'})
+    else:
+        return JsonResponse({'status': 'failed'})
 
-// Call the first function when the page loads
-verifySyntax();
+def verify_db(request):
+    # Perform DB connectivity check
+    # Simulate success for demonstration
+    success = True
+    if success:
+        return JsonResponse({'status': 'success'})
+    else:
+        return JsonResponse({'status': 'failed'})
