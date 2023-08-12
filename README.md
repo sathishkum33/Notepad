@@ -1,37 +1,16 @@
-import psycopg2
-from psycopg2 import sql
-from psycopg2 import errors
+import requests
 
-db_params = {
-    'dbname': 'your_db_name',
-    'user': 'your_username',
-    'password': 'your_password',
-    'host': 'your_host',
-    'port': 'your_port',
-}
+artifactory_url = 'https://your-artifactory-url/artifactory'
+repository = 'your-repository'
+directory_path = 'path/to/your/directory'
 
-sql_file_path = 'your_sql_file.sql'
+api_url = f'{artifactory_url}/{repository}/{directory_path}?list'
 
-with open(sql_file_path, 'r') as sql_file:
-    sql_code = sql_file.read()
+response = requests.get(api_url, auth=('your-username', 'your-api-key'))
 
-try:
-    connection = psycopg2.connect(**db_params)
-    cursor = connection.cursor()
-
-    # Split SQL statements into individual queries
-    sql_statements = sql_code.split(';')
-
-    for statement in sql_statements:
-        try:
-            if statement.strip():  # Avoid empty statements
-                cursor.execute(sql.SQL(statement))
-        except (errors.SyntaxError, Exception) as e:
-            print("Error:", e)
-            print("Query:", statement)
-            print("=" * 40)
-
-    cursor.close()
-    connection.close()
-except Exception as e:
-    print("An error occurred:", e)
+if response.status_code == 200:
+    directory_data = response.json()
+    for item in directory_data['files']:
+        print(item['uri'])
+else:
+    print("Error fetching directory contents:", response.status_code)
