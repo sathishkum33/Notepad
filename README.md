@@ -1,19 +1,7 @@
-from django.http import JsonResponse
+<p id="syntax-status">Verifying Syntax...</p>
+<p id="db-status"></p>
 
-def verify_syntax(request):
-    # Perform syntax verification
-    # Simulate success for demonstration
-    success = True
-    if success:
-        return JsonResponse({'status': 'success'})
-    else:
-        return JsonResponse({'status': 'failed'})
-
-def verify_db(request):
-    # Perform DB connectivity check
-    # Simulate success for demonstration
-    success = True
-    if success:
-        return JsonResponse({'status': 'success'})
-    else:
-        return JsonResponse({'status': 'failed'})
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Include your script.js file -->
+<script src="{% static 'js/script.js' %}"></script>
