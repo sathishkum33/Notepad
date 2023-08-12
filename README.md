@@ -1,33 +1,16 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Shared Folder File Content</title>
-</head>
-<body>
-    <h1>File Content from Shared Folder</h1>
-    <pre>
-        <!-- VBScript code here -->
-        <%
-        Set objFSO = CreateObject("Scripting.FileSystemObject")
+import sqlfluff.api
 
-        strServerName = "ServerName"
-        strShareName = "ShareName"
-        strFileName = "FileName.txt"
-        strPath = "\\" & strServerName & "\" & strShareName & "\" & strFileName
+sql_file_path = 'your_sql_file.sql'
 
-        If objFSO.FileExists(strPath) Then
-            Set objFile = objFSO.OpenTextFile(strPath, 1)
+with open(sql_file_path, 'r') as sql_file:
+    sql_code = sql_file.read()
 
-            Do Until objFile.AtEndOfStream
-                strLine = objFile.ReadLine
-                Response.Write Server.HTMLEncode(strLine) & "<br>"
-            Loop
-
-            objFile.Close
-        Else
-            Response.Write "File not found."
-        End If
-        %>
-    </pre>
-</body>
-</html>
+try:
+    violations = sqlfluff.api.lint_string(sql_code)
+    if not violations:
+        print("No syntax errors or linting issues found.")
+    else:
+        for v in violations:
+            print(v)
+except Exception as e:
+    print("An error occurred:", e)
