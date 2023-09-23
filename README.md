@@ -1,19 +1,12 @@
-import java.security.KeyStore;
-import java.security.Security;
-
-public class KeystorePathPrinter {
-
-    public static void main(String[] args) {
-        try {
-            String keystoreType = "JKS"; // Adjust the keystore type if necessary
-            KeyStore keyStore = KeyStore.getInstance(keystoreType);
-
-            String javaHome = System.getProperty("java.home");
-            String cacertsPath = javaHome + "/lib/security/cacerts";
-
-            System.out.println("Path to cacerts keystore: " + cacertsPath);
-        } catch (Exception e) {
-            e.printStackTrace();
+function handleCheckboxChange(checkbox) {
+    if (checkbox.checked) {
+        // Add the selected value to the array
+        selectedValues.push(checkbox.value);
+    } else {
+        // Remove the value if the checkbox is unchecked (optional)
+        const index = selectedValues.indexOf(checkbox.value);
+        if (index !== -1) {
+            selectedValues.splice(index, 1);
         }
     }
 }
