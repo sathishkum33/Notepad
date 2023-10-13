@@ -1,29 +1,57 @@
-// Initialize an array to store selected values
-let selectedValues = [];
+USE YourDatabaseName; -- Replace with your database name
 
-// Function to open the Bootstrap popup
-function openPopup() {
-    // Clear the array before showing the popup
-    selectedValues = [];
-    // Code to open the popup goes here
-}
+DECLARE @SchemaName NVARCHAR(128) = 'YourSchemaName'; -- Replace with your schema name
 
-// Function to handle checkbox selection
-function handleCheckboxChange(checkbox) {
-    if (checkbox.checked) {
-        // Add the selected value to the array
-        selectedValues.push(checkbox.value);
-    } else {
-        // Remove the value if the checkbox is unchecked (optional)
-        const index = selectedValues.indexOf(checkbox.value);
-        if (index !== -1) {
-            selectedValues.splice(index, 1);
-        }
-    }
-}
+-- Create a temporary table to store results
+CREATE TABLE #TableInfo (
+    TableName NVARCHAR(128),
+    ColumnCount INT,
+    RowCount INT
+);
 
-// Function to process the selected values
-function processSelectedValues() {
-    console.log(selectedValues);
-    // Perform any other actions with the selected values
-}
+-- Iterate through tables in the specified schema
+DECLARE @TableName NVARCHAR(128);
+DECLARE @SQL NVARCHAR(MAX);
+
+DECLARE table_cursor CURSOR FOR
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = @SchemaName AND table_type = 'BASE TABLE';
+
+OPEN table_cursor;
+
+FETCH NEXT FROM table_cursor INTO @TableName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    -- Count columns
+    SET @SQL = N'SELECT @ColumnCount = COUNT(*)
+                 FROM information_schema.columns
+                 WHERE table_schema = @SchemaName
+                 AND table_name = @TableName';
+    
+    DECLARE @ColumnCount INT;
+    EXEC sp_executesql @SQL, N'@ColumnCount INT OUTPUT, @SchemaName NVARCHAR(128), @TableName NVARCHAR(128)', @ColumnCount OUTPUT, @SchemaName, @TableName;
+
+    -- Count rows
+    SET @SQL = N'SELECT @RowCount = COUNT(*)
+                 FROM ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName);
+
+    DECLARE @RowCount INT;
+    EXEC sp_executesql @SQL, N'@RowCount INT OUTPUT', @RowCount OUTPUT;
+
+    -- Insert into temporary table
+    INSERT INTO #TableInfo (TableName, ColumnCount, RowCount)
+    VALUES (@TableName, @ColumnCount, @RowCount);
+
+    FETCH NEXT FROM table_cursor INTO @TableName;
+END;
+
+CLOSE table_cursor;
+DEALLOCATE table_cursor;
+
+-- Select the results
+SELECT * FROM #TableInfo;
+
+-- Drop the temporary table
+DROP TABLE #TableInfo;
