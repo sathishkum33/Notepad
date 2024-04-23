@@ -46,7 +46,19 @@ for row in ws.iter_rows(min_row=2, min_col=1, max_row=ws.max_row, max_col=ws.max
                              top=Side(style='thin', color='000000'),
                              bottom=Side(style='thin', color='000000'))
 
+# Adjust column width based on content size
+for col in ws.columns:
+    max_length = 0
+    for cell in col:
+        try:
+            if len(str(cell.value)) > max_length:
+                max_length = len(cell.value)
+        except:
+            pass
+    adjusted_width = (max_length + 2) * 1.2
+    ws.column_dimensions[col[0].column_letter].width = adjusted_width
+
 # Save the workbook
 wb.save('output.xlsx')
 
-print("Excel file generated successfully with formatted header and black borders.")
+print("Excel file generated successfully with formatted header, black borders, and adjusted column widths.")
