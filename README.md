@@ -21,8 +21,8 @@ df.columns = ['APPLICATION', 'ENVIRONMENT', 'STATUS', 'VERSION']
 # Create a new Excel workbook
 wb = Workbook()
 
-# Add a worksheet
-ws = wb.active
+# Add a worksheet with a specific name
+ws = wb.create_sheet(title='Application Data')
 
 # Convert DataFrame to worksheet
 for r in dataframe_to_rows(df, index=False, header=True):
@@ -61,4 +61,4 @@ for col in ws.columns:
 # Save the workbook
 wb.save('output.xlsx')
 
-print("Excel file generated successfully with formatted header, black borders, and adjusted column widths.")
+print("Excel file generated successfully with formatted header, black borders, adjusted column widths, and specified sheet name.")
