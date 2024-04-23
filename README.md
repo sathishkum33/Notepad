@@ -1,57 +1,42 @@
-USE YourDatabaseName; -- Replace with your database name
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.styles import Border, Side
 
-DECLARE @SchemaName NVARCHAR(128) = 'YourSchemaName'; -- Replace with your schema name
+# Define your data
+data = [
+    {"app": "cib", "env": "dev", "status": "active", "version": "1.0", "ip": "192.168.1.1"},
+    {"app": "cib", "env": "uat", "status": "inactive", "version": "1.1", "ip": "192.168.1.2"},
+    {"app": "cib", "env": "sit", "status": "active", "version": "1.2", "ip": "192.168.1.3"}
+]
 
--- Create a temporary table to store results
-CREATE TABLE #TableInfo (
-    TableName NVARCHAR(128),
-    ColumnCount INT,
-    RowCount INT
-);
+# Convert the data into a Pandas DataFrame
+df = pd.DataFrame(data)
 
--- Iterate through tables in the specified schema
-DECLARE @TableName NVARCHAR(128);
-DECLARE @SQL NVARCHAR(MAX);
+# Reorder columns
+df = df[['app', 'env', 'status', 'version']]
 
-DECLARE table_cursor CURSOR FOR
-SELECT table_name
-FROM information_schema.tables
-WHERE table_schema = @SchemaName AND table_type = 'BASE TABLE';
+# Rename columns
+df.columns = ['APPLICATION', 'ENVIRONMENT', 'STATUS', 'VERSION']
 
-OPEN table_cursor;
+# Create a new Excel workbook
+wb = Workbook()
 
-FETCH NEXT FROM table_cursor INTO @TableName;
+# Add a worksheet
+ws = wb.active
 
-WHILE @@FETCH_STATUS = 0
-BEGIN
-    -- Count columns
-    SET @SQL = N'SELECT @ColumnCount = COUNT(*)
-                 FROM information_schema.columns
-                 WHERE table_schema = @SchemaName
-                 AND table_name = @TableName';
-    
-    DECLARE @ColumnCount INT;
-    EXEC sp_executesql @SQL, N'@ColumnCount INT OUTPUT, @SchemaName NVARCHAR(128), @TableName NVARCHAR(128)', @ColumnCount OUTPUT, @SchemaName, @TableName;
+# Convert DataFrame to worksheet
+for r in dataframe_to_rows(df, index=False, header=True):
+    ws.append(r)
 
-    -- Count rows
-    SET @SQL = N'SELECT @RowCount = COUNT(*)
-                 FROM ' + QUOTENAME(@SchemaName) + '.' + QUOTENAME(@TableName);
+# Add black border around filled cells
+for row in ws.iter_rows(min_row=2, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
+    for cell in row:
+        cell.border = Border(left=Side(style='thin', color='000000'),
+                             right=Side(style='thin', color='000000'),
+                             top=Side(style='thin', color='000000'),
+                             bottom=Side(style='thin', color='000000'))
 
-    DECLARE @RowCount INT;
-    EXEC sp_executesql @SQL, N'@RowCount INT OUTPUT', @RowCount OUTPUT;
+# Save the workbook
+wb.save('output.xlsx')
 
-    -- Insert into temporary table
-    INSERT INTO #TableInfo (TableName, ColumnCount, RowCount)
-    VALUES (@TableName, @ColumnCount, @RowCount);
-
-    FETCH NEXT FROM table_cursor INTO @TableName;
-END;
-
-CLOSE table_cursor;
-DEALLOCATE table_cursor;
-
--- Select the results
-SELECT * FROM #TableInfo;
-
--- Drop the temporary table
-DROP TABLE #TableInfo;
+print("Excel file generated successfully with black borders.")
