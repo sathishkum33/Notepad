@@ -1,57 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Management Table</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <table>
-        <thead>
-            <tr>
-                <th>Cust.</th>
-                <th>Project</th>
-                <th>Assign Date</th>
-                <th>Team</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Edit</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr class="main-row" onclick="toggleDetails(this)">
-                <td><img src="path_to_avatar1.jpg" alt="Avatar" class="avatar"></td>
-                <td>
-                    Wordpress Website<br>
-                    <span class="assigned-to">Assigned to <strong>Airi Satou</strong></span>
-                </td>
-                <td>20-02-2018</td>
-                <td><img src="team_image.jpg" alt="Team" class="team"></td>
-                <td>High</td>
-                <td>
-                    <span>50%</span>
-                    <div class="progress-bar" style="width: 50%; background-color: green;"></div>
-                </td>
-                <td>
-                    <button class="edit-btn">✏️</button>
-                    <button class="delete-btn">🗑️</button>
-                </td>
-            </tr>
-            <tr class="details-row">
-                <td colspan="7">
-                    <div class="details-content">
-                        <ul>
-                            <li><a href="download_link1">Download Option 1</a></li>
-                            <li><a href="download_link2">Download Option 2</a></li>
-                            <li><a href="download_link3">Download Option 3</a></li>
-                        </ul>
-                    </div>
-                </td>
-            </tr>
-            <!-- Add more rows similarly -->
-        </tbody>
-    </table>
-    <script src="script.js"></script>
-</body>
-</html>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f9f9f9;
+    font-weight: bold;
+}
+
+td img.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+td img.team {
+    width: 100px;
+    height: auto;
+}
+
+.assigned-to {
+    color: gray;
+}
+
+.progress-bar {
+    height: 10px;
+    background-color: lightgray;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.edit-btn, .delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+}
+
+.edit-btn:hover, .delete-btn:hover {
+    opacity: 0.7;
+}
+
+.details-row {
+    display: none;
+}
+
+.details-content {
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #ddd;
+}
+
+.details-content ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.details-content li {
+    margin: 5px 0;
+}
+
+.details-content a {
+    text-decoration: none;
+    color: #007BFF;
+}
+
+.details-content a:hover {
+    text-decoration: underline;
+}
