@@ -18,6 +18,19 @@
         }
         .toggle-button {
             cursor: pointer;
+            transition: transform 0.3s ease;
+            border-radius: 50%;
+            padding: 5px;
+            background-color: #f0f0f0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 14px;
+        }
+        .toggle-button.expanded {
+            transform: rotate(90deg);
         }
     </style>
 </head>
@@ -42,7 +55,7 @@
                 <td>12345</td>
                 <td>main</td>
                 <td>Build A</td>
-                <td class="toggle-button">></td>
+                <td class="toggle-button">&gt;</td>
             </tr>
             <tr data-child='{"environment":["Development"],"execution_date":"2024-06-02","execution_time":"1:00 PM","downloads":["link3"]}'>
                 <td>2</td>
@@ -50,7 +63,7 @@
                 <td>12346</td>
                 <td>dev</td>
                 <td>Build B</td>
-                <td class="toggle-button">></td>
+                <td class="toggle-button">&gt;</td>
             </tr>
             <tr data-child='{"environment":["Testing"],"execution_date":"2024-06-03","execution_time":"2:00 PM","downloads":["link4","link5"]}'>
                 <td>3</td>
@@ -58,7 +71,7 @@
                 <td>12347</td>
                 <td>feature-branch</td>
                 <td>Build C</td>
-                <td class="toggle-button">></td>
+                <td class="toggle-button">&gt;</td>
             </tr>
             <!-- Add more rows as needed -->
         </tbody>
@@ -85,7 +98,7 @@ $(document).ready(function() {
 
         if (row.child.isShown()) {
             row.child.hide();
-            button.html('>');
+            button.html('&gt;').removeClass('expanded');
         } else {
             var data = tr.data('child');
             var detailsHtml = `
@@ -103,7 +116,7 @@ $(document).ready(function() {
                 </div>
             `;
             row.child(detailsHtml).show();
-            button.html('v');
+            button.html('&gt;').addClass('expanded');
         }
     });
 });
