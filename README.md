@@ -13,8 +13,8 @@
         .details-show {
             display: table-row;
         }
-        .no-border {
-            border: none !important; /* Ensure no borders for the details container */
+        .no-border td {
+            border: none !important;
         }
         .toggle-button {
             cursor: pointer;
@@ -40,29 +40,29 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
+            <tr data-child='{"environment":["Production", "Staging"],"execution_date":"2024-06-01","execution_time":"12:00 PM","downloads":["link1","link2"]}'>
                 <td>1</td>
                 <td>1001</td>
                 <td>12345</td>
                 <td>main</td>
                 <td>Build A</td>
-                <td><span class="toggle-button">&gt;</span></td>
+                <td class="toggle-button">&gt;</td>
             </tr>
-            <tr>
+            <tr data-child='{"environment":["Development"],"execution_date":"2024-06-02","execution_time":"1:00 PM","downloads":["link3"]}'>
                 <td>2</td>
                 <td>1002</td>
                 <td>12346</td>
                 <td>dev</td>
                 <td>Build B</td>
-                <td><span class="toggle-button">&gt;</span></td>
+                <td class="toggle-button">&gt;</td>
             </tr>
-            <tr>
+            <tr data-child='{"environment":["Testing"],"execution_date":"2024-06-03","execution_time":"2:00 PM","downloads":["link4","link5"]}'>
                 <td>3</td>
                 <td>1003</td>
                 <td>12347</td>
                 <td>feature-branch</td>
                 <td>Build C</td>
-                <td><span class="toggle-button">&gt;</span></td>
+                <td class="toggle-button">&gt;</td>
             </tr>
             <!-- Add more rows as needed -->
         </tbody>
@@ -82,10 +82,10 @@ $(document).ready(function() {
     });
 
     // Toggle the details
-    $('#buildTable').on('click', 'tbody .toggle-button', function() {
+    $('#buildTable').on('click', 'tbody tr', function() {
         var tr = $(this).closest('tr');
         var row = table.row(tr);
-        var button = $(this);
+        var button = tr.find('.toggle-button');
 
         if (row.child.isShown()) {
             row.child.hide();
@@ -93,25 +93,21 @@ $(document).ready(function() {
         } else {
             var data = tr.data('child');
             var detailsHtml = `
-                <tr class="details-container">
-                    <td colspan="6">
-                        <div class="no-border">
-                            <strong>Environment:</strong>
-                            <ul>
-                                ${data.environment.map(env => `<li>${env}</li>`).join('')}
-                            </ul>
-                            <strong>Execution Date:</strong> ${data.execution_date}<br>
-                            <strong>Execution Time:</strong> ${data.execution_time}<br>
-                            <strong>Downloads:</strong>
-                            <ul>
-                                ${data.downloads.map(link => `<li><a href="#">${link}</a></li>`).join('')}
-                            </ul>
-                        </div>
-                    </td>
-                </tr>
+                <div class="no-border">
+                    <strong>Environment:</strong>
+                    <ul>
+                        ${data.environment.map(env => `<li>${env}</li>`).join('')}
+                    </ul>
+                    <strong>Execution Date:</strong> ${data.execution_date}<br>
+                    <strong>Execution Time:</strong> ${data.execution_time}<br>
+                    <strong>Downloads:</strong>
+                    <ul>
+                        ${data.downloads.map(link => `<li><a href="#">${link}</a></li>`).join('')}
+                    </ul>
+                </div>
             `;
             row.child(detailsHtml).show();
-            button.html('V').addClass('expanded');
+            button.html('&gt;').addClass('expanded');
         }
     });
 });
