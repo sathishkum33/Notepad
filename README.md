@@ -13,8 +13,8 @@
         .details-show {
             display: table-row;
         }
-        .no-border td {
-            border: none !important;
+        .no-border {
+            border: none !important; /* Ensure no borders for the details container */
         }
         .toggle-button {
             cursor: pointer;
@@ -90,6 +90,7 @@ $(document).ready(function() {
         if (row.child.isShown()) {
             row.child.hide();
             button.html('&gt;').removeClass('expanded');
+            tr.removeClass('shown'); // Ensure no additional classes are affecting borders
         } else {
             var data = tr.data('child');
             var detailsHtml = `
@@ -107,7 +108,8 @@ $(document).ready(function() {
                 </div>
             `;
             row.child(detailsHtml).show();
-            button.html('&gt;').addClass('expanded');
+            button.html('V').addClass('expanded');
+            tr.addClass('shown'); // Ensure no additional classes are affecting borders
         }
     });
 });
