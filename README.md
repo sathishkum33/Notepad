@@ -19,15 +19,6 @@
         .toggle-button {
             cursor: pointer;
             transition: transform 0.3s ease;
-            border-radius: 50%;
-            padding: 5px;
-            background-color: #f0f0f0;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            text-align: center;
-            line-height: 14px;
         }
         .toggle-button.expanded {
             transform: rotate(90deg);
