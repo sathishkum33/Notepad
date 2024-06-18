@@ -18,10 +18,6 @@
         }
         .toggle-button {
             cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-        .toggle-button.expanded {
-            transform: rotate(90deg);
         }
     </style>
 </head>
@@ -46,7 +42,7 @@
                 <td>12345</td>
                 <td>main</td>
                 <td>Build A</td>
-                <td class="toggle-button">&gt;</td>
+                <td class="toggle-button">></td>
             </tr>
             <tr data-child='{"environment":["Development"],"execution_date":"2024-06-02","execution_time":"1:00 PM","downloads":["link3"]}'>
                 <td>2</td>
@@ -54,7 +50,7 @@
                 <td>12346</td>
                 <td>dev</td>
                 <td>Build B</td>
-                <td class="toggle-button">&gt;</td>
+                <td class="toggle-button">></td>
             </tr>
             <tr data-child='{"environment":["Testing"],"execution_date":"2024-06-03","execution_time":"2:00 PM","downloads":["link4","link5"]}'>
                 <td>3</td>
@@ -62,7 +58,7 @@
                 <td>12347</td>
                 <td>feature-branch</td>
                 <td>Build C</td>
-                <td class="toggle-button">&gt;</td>
+                <td class="toggle-button">></td>
             </tr>
             <!-- Add more rows as needed -->
         </tbody>
@@ -89,7 +85,7 @@ $(document).ready(function() {
 
         if (row.child.isShown()) {
             row.child.hide();
-            button.html('&gt;').removeClass('expanded');
+            button.html('>');
         } else {
             var data = tr.data('child');
             var detailsHtml = `
@@ -107,7 +103,7 @@ $(document).ready(function() {
                 </div>
             `;
             row.child(detailsHtml).show();
-            button.html('&gt;').addClass('expanded');
+            button.html('v');
         }
     });
 });
