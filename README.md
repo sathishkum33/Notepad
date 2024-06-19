@@ -36,7 +36,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr data-child='{"environment":["Production", "Staging"],"execution_date":"2024-06-01","execution_time":"12:00 PM","downloads":["link1","link2"]}'>
+            <tr data-child='[{"environment":"Production","execution_date":"2024-06-01","execution_time":"12:00 PM","downloads":["link1","link2"]},{"environment":"Staging","execution_date":"2024-06-02","execution_time":"1:00 PM","downloads":["link3"]}]'>
                 <td>1</td>
                 <td>1001</td>
                 <td>12345</td>
@@ -44,7 +44,7 @@
                 <td>Build A</td>
                 <td class="toggle-button">></td>
             </tr>
-            <tr data-child='{"environment":["Development"],"execution_date":"2024-06-02","execution_time":"1:00 PM","downloads":["link3"]}'>
+            <tr data-child='[{"environment":"Development","execution_date":"2024-06-02","execution_time":"1:00 PM","downloads":["link4"]}]'>
                 <td>2</td>
                 <td>1002</td>
                 <td>12346</td>
@@ -52,7 +52,7 @@
                 <td>Build B</td>
                 <td class="toggle-button">></td>
             </tr>
-            <tr data-child='{"environment":["Testing"],"execution_date":"2024-06-03","execution_time":"2:00 PM","downloads":["link4","link5"]}'>
+            <tr data-child='[{"environment":"Testing","execution_date":"2024-06-03","execution_time":"2:00 PM","downloads":["link5","link6"]}]'>
                 <td>3</td>
                 <td>1003</td>
                 <td>12347</td>
@@ -88,20 +88,17 @@ $(document).ready(function() {
             button.html('>');
         } else {
             var data = tr.data('child');
-            var detailsHtml = `
+            var detailsHtml = data.map(detail => `
                 <div class="no-border">
-                    <strong>Environment:</strong>
-                    <ul>
-                        ${data.environment.map(env => `<li>${env}</li>`).join('')}
-                    </ul>
-                    <strong>Execution Date:</strong> ${data.execution_date}<br>
-                    <strong>Execution Time:</strong> ${data.execution_time}<br>
+                    <strong>Environment:</strong> ${detail.environment}<br>
+                    <strong>Execution Date:</strong> ${detail.execution_date}<br>
+                    <strong>Execution Time:</strong> ${detail.execution_time}<br>
                     <strong>Downloads:</strong>
                     <ul>
-                        ${data.downloads.map(link => `<li><a href="#">${link}</a></li>`).join('')}
+                        ${detail.downloads.map(link => `<li><a href="#">${link}</a></li>`).join('')}
                     </ul>
                 </div>
-            `;
+            `).join('<hr>'); // Separate details with a horizontal rule
             row.child(detailsHtml).show();
             button.html('v');
         }
