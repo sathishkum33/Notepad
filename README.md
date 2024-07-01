@@ -1,5 +1,5 @@
 # Path to the web.config file
-$webConfigPath = "C:\path\to\your\web.config"
+$webConfigPath = "/mnt/data/file-CMjB5jeqekthYf1PGCe0yLcA"
 
 # Load the web.config file
 [xml]$webConfig = Get-Content $webConfigPath
