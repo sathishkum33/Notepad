@@ -1,6 +1,6 @@
-function Encode($sIn) {
+function Decode($sIn) {
     $ABFrom = ""
-    $Encode = ""
+    $Decode = ""
 
     # Build ABFrom string
     for ($x = 0; $x -le 25; $x++) {
@@ -16,21 +16,21 @@ function Encode($sIn) {
     # Create abto string by shifting 13 positions to the left
     $abto = $ABFrom.Substring(13) + $ABFrom.Substring(0, 13)
 
-    # Encode the input string
+    # Decode the input string
     for ($x = 0; $x -lt $sIn.Length; $x++) {
         $char = $sIn[$x]
-        $y = $ABFrom.IndexOf($char)
+        $y = $abto.IndexOf($char)
         if ($y -eq -1) {
-            $Encode += $char  # If character is not in ABFrom, leave it unchanged
+            $Decode += $char  # If character is not in abto, leave it unchanged
         } else {
-            $Encode += $abto[$y]  # Substitute with the character from abto
+            $Decode += $ABFrom[$y]  # Substitute with the character from ABFrom
         }
     }
 
-    return $Encode
+    return $Decode
 }
 
 # Example usage
-$sIn = "Hello123"
-$encodedString = Encode $sIn
-Write-Output $encodedString
+$sIn = "Uryyb456"
+$decodedString = Decode $sIn
+Write-Output $decodedString
