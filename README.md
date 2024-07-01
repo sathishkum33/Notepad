@@ -1,109 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bootstrap 4 Table with Search and Expand/Collapse</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css">
-    <style>
-        .details-container {
-            display: none;
-        }
-        .details-show {
-            display: table-row;
-        }
-        .no-border td {
-            border: none !important;
-        }
-        .toggle-button {
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-<div class="container mt-5">
-    <h2 class="mb-4">Build Information Table</h2>
-    <table id="buildTable" class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Release ID</th>
-                <th>Build ID</th>
-                <th>Build Number</th>
-                <th>Branch Name</th>
-                <th>Name</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr data-child='[{"environment":"Production","execution_date":"2024-06-01","execution_time":"12:00 PM","downloads":["link1","link2"]},{"environment":"Staging","execution_date":"2024-06-02","execution_time":"1:00 PM","downloads":["link3"]}]'>
-                <td>1</td>
-                <td>1001</td>
-                <td>12345</td>
-                <td>main</td>
-                <td>Build A</td>
-                <td class="toggle-button">></td>
-            </tr>
-            <tr data-child='[{"environment":"Development","execution_date":"2024-06-02","execution_time":"1:00 PM","downloads":["link4"]}]'>
-                <td>2</td>
-                <td>1002</td>
-                <td>12346</td>
-                <td>dev</td>
-                <td>Build B</td>
-                <td class="toggle-button">></td>
-            </tr>
-            <tr data-child='[{"environment":"Testing","execution_date":"2024-06-03","execution_time":"2:00 PM","downloads":["link5","link6"]}]'>
-                <td>3</td>
-                <td>1003</td>
-                <td>12347</td>
-                <td>feature-branch</td>
-                <td>Build C</td>
-                <td class="toggle-button">></td>
-            </tr>
-            <!-- Add more rows as needed -->
-        </tbody>
-    </table>
-</div>
+# Define Vault parameters
+$vaultAddress = "http://127.0.0.1:8200" # Vault server address
+$roleID = "your-role-id" # AppRole Role ID (replace with your actual Role ID)
+$secretID = "your-secret-id" # AppRole Secret ID (replace with your actual Secret ID)
+$secretPath = "secret/data/my-secret" # Path to the secret
 
-<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
-<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
-<script>
-$(document).ready(function() {
-    var table = $('#buildTable').DataTable({
-        "order": [],
-        "columnDefs": [
-            { "orderable": false, "targets": -1 }
-        ]
-    });
+# Define the Vault URL for the AppRole login
+$vaultLoginUrl = "$vaultAddress/v1/auth/approle/login"
 
-    // Toggle the details
-    $('#buildTable').on('click', 'tbody tr', function() {
-        var tr = $(this).closest('tr');
-        var row = table.row(tr);
-        var button = tr.find('.toggle-button');
+# Set up the body for the request
+$loginBody = @{
+    role_id = $roleID
+    secret_id = $secretID
+} | ConvertTo-Json
 
-        if (row.child.isShown()) {
-            row.child.hide();
-            button.html('>');
-        } else {
-            var data = tr.data('child');
-            var detailsHtml = data.map(detail => `
-                <div class="no-border">
-                    <strong>Environment:</strong> ${detail.environment}<br>
-                    <strong>Execution Date:</strong> ${detail.execution_date}<br>
-                    <strong>Execution Time:</strong> ${detail.execution_time}<br>
-                    <strong>Downloads:</strong>
-                    <ul>
-                        ${detail.downloads.map(link => `<li><a href="#">${link}</a></li>`).join('')}
-                    </ul>
-                </div>
-            `).join('<hr>'); // Separate details with a horizontal rule
-            row.child(detailsHtml).show();
-            button.html('v');
-        }
-    });
-});
-</script>
-</body>
-</html>
+# Send a POST request to the Vault API to authenticate and fetch the token
+$loginResponse = Invoke-RestMethod -Uri $vaultLoginUrl -Method Post -Body $loginBody -ContentType "application/json"
+
+# Extract the token from the response
+$vaultToken = $loginResponse.auth.client_token
+
+# Output the token
+Write-Output "Vault Token: $vaultToken"
+
+# Define the Vault URL for the secret
+$vaultSecretUrl = "$vaultAddress/v1/$secretPath"
+
+# Set up the headers for the request
+$headers = @{
+    "X-Vault-Token" = $vaultToken
+}
+
+# Send a GET request to the Vault API to fetch the secret
+$secretResponse = Invoke-RestMethod -Uri $vaultSecretUrl -Method Get -Headers $headers
+
+# Extract the password from the response
+$password = $secretResponse.data.data.password
+
+# Output the password
+Write-Output "Password: $password"
