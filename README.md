@@ -4,14 +4,19 @@ $webConfigPath = "C:\path\to\your\web.config"
 # Load the web.config file
 [xml]$webConfig = Get-Content $webConfigPath
 
-# Define the key you want to change and the new value
-$key = "YourAppSettingKey"
-$newValue = "NewValue"
+# Define the key you want to change
+$key = "DBCONNECTIONSTRING"
 
 # Find the appSetting with the specified key
 $appSetting = $webConfig.configuration.appSettings.add | Where-Object { $_.key -eq $key }
 
 if ($appSetting) {
+    # Output the current value
+    Write-Output "Current value of '$key': $($appSetting.value)"
+
+    # Define the new value
+    $newValue = "new_connection_string"
+
     # Update the value
     $appSetting.value = $newValue
 
