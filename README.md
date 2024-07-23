@@ -1,24 +1,16 @@
-# Define new values for multiple keys
-$newValues = @{
-    "DBCONNECTIONSTRING" = "NewConnectionStringValue"
-    "DBCONNECTIONSTRING_EUC" = "NewEUCConnectionStringValue"
-    "OLEDBCONNECTIONSTRING1" = "NewOLEDBConnectionStringValue1"
-    # Add more keys and values as needed
-}
-
 # Load the XML file
-[xml]$xmlConfig = Get-Content -Path "C:\path\to\your\web.config"
+[xml]$webConfig = Get-Content "path\to\your\web.config"
 
-# Iterate over each location tag to find the appSettings and update values
-foreach ($location in $xmlConfig.configuration.'location') {
-    foreach ($key in $newValues.Keys) {
-        $setting = $location.appSettings.add | Where-Object { $_.key -eq $key }
-        if ($setting) {
-            # Update the value if found
-            $setting.value = $newValues[$key]
-        }
-    }
+# Extract the connection string
+$connectionString = $webConfig.configuration.connectionStrings.add | Where-Object { $_.name -eq "YourConnectionStringName" } | Select-Object -ExpandProperty connectionString
+
+# Verify the connection string (example for SQL Server)
+try {
+    $connection = New-Object System.Data.SqlClient.SqlConnection
+    $connection.ConnectionString = $connectionString
+    $connection.Open()
+    Write-Output "Connection Successful"
+    $connection.Close()
+} catch {
+    Write-Output "Connection Failed: $_"
 }
-
-# Save the updated XML back to the file
-$xmlConfig.Save("C:\path\to\your\web.config")
