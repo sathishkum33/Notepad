@@ -1,16 +1,12 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 import torch
 from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 import torch.optim as optim
 import requests
-import numpy as np
-import spacy
-
-# Load the spaCy model
-nlp = spacy.load('en_core_web_sm')
 
 # Load the data
 data = pd.read_csv('work_items.csv')
@@ -27,28 +23,30 @@ X = data['text']
 # Split the data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+# Vectorize the text data using TfidfVectorizer
+vectorizer = TfidfVectorizer(max_features=300)  # Limiting to 300 features for simplicity
+X_train_vectors = vectorizer.fit_transform(X_train).toarray()
+X_test_vectors = vectorizer.transform(X_test).toarray()
+
 # Define the Dataset and DataLoader
 class WorkItemDataset(Dataset):
-    def __init__(self, texts, labels):
-        self.texts = texts
+    def __init__(self, vectors, labels):
+        self.vectors = vectors
         self.labels = labels
 
     def __len__(self):
-        return len(self.texts)
+        return len(self.vectors)
 
     def __getitem__(self, idx):
-        text = self.texts[idx]
+        vector = self.vectors[idx]
         label = self.labels[idx]
-        doc = nlp(text)
-        vector = doc.vector
         return {
-            'text': text,
             'vector': torch.tensor(vector, dtype=torch.float),
             'labels': torch.tensor(label, dtype=torch.float)
         }
 
-train_dataset = WorkItemDataset(X_train, y_train)
-test_dataset = WorkItemDataset(X_test, y_test)
+train_dataset = WorkItemDataset(X_train_vectors, y_train)
+test_dataset = WorkItemDataset(X_test_vectors, y_test)
 
 train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=16)
@@ -65,7 +63,7 @@ class WorkItemTagger(nn.Module):
         x = self.drop(torch.relu(self.fc1(x)))
         return self.out(x)
 
-model = WorkItemTagger(input_dim=300, n_classes=y.shape[1])  # 300 is the dimension of spaCy vectors
+model = WorkItemTagger(input_dim=300, n_classes=y.shape[1])  # 300 is the dimension of TF-IDF vectors
 
 # Train the Model
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -109,8 +107,8 @@ model.eval()
 
 # Define function to predict tags
 def predict_tags(text):
-    doc = nlp(text)
-    vector = torch.tensor(doc.vector, dtype=torch.float).to(device).unsqueeze(0)
+    vector = vectorizer.transform([text]).toarray()
+    vector = torch.tensor(vector, dtype=torch.float).to(device)
     
     with torch.no_grad():
         outputs = model(vector)
