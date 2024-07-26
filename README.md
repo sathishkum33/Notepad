@@ -3,11 +3,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MultiLabelBinarizer
 import torch
 from torch.utils.data import Dataset, DataLoader
-from transformers import BertTokenizer, BertModel
 import torch.nn as nn
 import torch.optim as optim
 import requests
 import numpy as np
+import spacy
+
+# Load the spaCy model
+nlp = spacy.load('en_core_web_sm')
 
 # Load the data
 data = pd.read_csv('work_items.csv')
@@ -25,8 +28,6 @@ X = data['text']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Define the Dataset and DataLoader
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
 class WorkItemDataset(Dataset):
     def __init__(self, texts, labels):
         self.texts = texts
@@ -38,19 +39,11 @@ class WorkItemDataset(Dataset):
     def __getitem__(self, idx):
         text = self.texts[idx]
         label = self.labels[idx]
-        encoding = tokenizer.encode_plus(
-            text,
-            add_special_tokens=True,
-            max_length=256,
-            return_token_type_ids=False,
-            padding='max_length',
-            return_attention_mask=True,
-            return_tensors='pt',
-        )
+        doc = nlp(text)
+        vector = doc.vector
         return {
             'text': text,
-            'input_ids': encoding['input_ids'].flatten(),
-            'attention_mask': encoding['attention_mask'].flatten(),
+            'vector': torch.tensor(vector, dtype=torch.float),
             'labels': torch.tensor(label, dtype=torch.float)
         }
 
@@ -62,21 +55,17 @@ test_loader = DataLoader(test_dataset, batch_size=16)
 
 # Define the Model
 class WorkItemTagger(nn.Module):
-    def __init__(self, n_classes):
+    def __init__(self, input_dim, n_classes):
         super(WorkItemTagger, self).__init__()
-        self.bert = BertModel.from_pretrained('bert-base-uncased')
+        self.fc1 = nn.Linear(input_dim, 512)
         self.drop = nn.Dropout(p=0.3)
-        self.out = nn.Linear(self.bert.config.hidden_size, n_classes)
+        self.out = nn.Linear(512, n_classes)
         
-    def forward(self, input_ids, attention_mask):
-        _, pooled_output = self.bert(
-            input_ids=input_ids,
-            attention_mask=attention_mask
-        )
-        output = self.drop(pooled_output)
-        return self.out(output)
+    def forward(self, x):
+        x = self.drop(torch.relu(self.fc1(x)))
+        return self.out(x)
 
-model = WorkItemTagger(n_classes=y.shape[1])
+model = WorkItemTagger(input_dim=300, n_classes=y.shape[1])  # 300 is the dimension of spaCy vectors
 
 # Train the Model
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -89,11 +78,10 @@ def train_epoch(model, data_loader, criterion, optimizer, device):
     model.train()
     losses = []
     for batch in data_loader:
-        input_ids = batch['input_ids'].to(device)
-        attention_mask = batch['attention_mask'].to(device)
+        vectors = batch['vector'].to(device)
         labels = batch['labels'].to(device)
         
-        outputs = model(input_ids, attention_mask)
+        outputs = model(vectors)
         loss = criterion(outputs, labels)
         
         optimizer.zero_grad()
@@ -114,27 +102,18 @@ for epoch in range(EPOCHS):
 torch.save(model.state_dict(), 'tagging_model.pth')
 
 # Load the model for inference
-model = WorkItemTagger(n_classes=y.shape[1])
+model = WorkItemTagger(input_dim=300, n_classes=y.shape[1])
 model.load_state_dict(torch.load('tagging_model.pth'))
 model = model.to(device)
 model.eval()
 
 # Define function to predict tags
 def predict_tags(text):
-    encoding = tokenizer.encode_plus(
-        text,
-        add_special_tokens=True,
-        max_length=256,
-        return_token_type_ids=False,
-        padding='max_length',
-        return_attention_mask=True,
-        return_tensors='pt',
-    )
-    input_ids = encoding['input_ids'].to(device)
-    attention_mask = encoding['attention_mask'].to(device)
+    doc = nlp(text)
+    vector = torch.tensor(doc.vector, dtype=torch.float).to(device).unsqueeze(0)
     
     with torch.no_grad():
-        outputs = model(input_ids, attention_mask)
+        outputs = model(vector)
     
     predictions = torch.sigmoid(outputs).cpu().numpy()
     tags = mlb.inverse_transform(predictions > 0.5)[0]
