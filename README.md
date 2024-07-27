@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, log_loss
+from sklearn.pipeline import make_pipeline
+from sklearn.utils import shuffle
+import joblib
 
 # Load data in chunks
 def load_data_in_chunks(file_path, chunksize=10000):
@@ -13,17 +14,17 @@ def load_data_in_chunks(file_path, chunksize=10000):
         yield chunk
 
 # File path to the CSV file
-file_path = 'path/to/your/large_dataset.csv'
+file_path = 'output.csv'
+
+# Paths for saving the model and vectorizer
+model_file = 'sgd_classifier_model.pkl'
+vectorizer_file = 'tfidf_vectorizer.pkl'
+label_encoder_file = 'label_encoder.pkl'
 
 # Initialize vectorizer, classifier, and label encoder
 vectorizer = TfidfVectorizer()
-base_classifier = SGDClassifier(loss='log')  # Logistic regression for probability estimates
-classifier = CalibratedClassifierCV(base_classifier, method='sigmoid', cv='prefit')
+classifier = SGDClassifier()
 label_encoder = LabelEncoder()
-
-# Define variables to track accuracy and loss
-accuracies = []
-losses = []
 
 # Define a variable to track if it's the first batch
 first_batch = True
@@ -33,57 +34,27 @@ for chunk in load_data_in_chunks(file_path):
     # Extract descriptions and tags
     descriptions = chunk['description'].values
     tags = chunk['tag'].values
-    
+
     # Encode the tags
     if first_batch:
         labels_encoded = label_encoder.fit_transform(tags)
     else:
         labels_encoded = label_encoder.transform(tags)
-    
+
     # Transform descriptions to TF-IDF features
-    if first_batch:
-        X_batch = vectorizer.fit_transform(descriptions)
-    else:
-        X_batch = vectorizer.transform(descriptions)
-    
+    X_batch = vectorizer.fit_transform(descriptions) if first_batch else vectorizer.transform(descriptions)
     y_batch = labels_encoded
-    
+
     # Incrementally train the model
     if first_batch:
-        base_classifier.partial_fit(X_batch, y_batch, classes=np.unique(labels_encoded))
-        classifier.fit(X_batch, y_batch)
+        classifier.partial_fit(X_batch, y_batch, classes=np.unique(labels_encoded))
         first_batch = False
     else:
-        base_classifier.partial_fit(X_batch, y_batch)
-        classifier.fit(X_batch, y_batch)
-    
-    # Predict on the current batch
-    predictions = classifier.predict(X_batch)
-    pred_proba = classifier.predict_proba(X_batch)
-    
-    # Calculate accuracy and log loss
-    acc = accuracy_score(y_batch, predictions)
-    loss = log_loss(y_batch, pred_proba)
-    
-    # Save accuracy and loss
-    accuracies.append(acc)
-    losses.append(loss)
-    
-    print(f"Batch Accuracy: {acc:.4f}, Batch Loss: {loss:.4f}")
+        classifier.partial_fit(X_batch, y_batch)
 
-# Example usage to predict tags for new descriptions
-test_descriptions = ["A sweet red fruit with seeds on the outside.", "A long yellow fruit that monkeys love."]
-X_test = vectorizer.transform(test_descriptions)
-predicted_labels = classifier.predict(X_test)
-predicted_tags = label_encoder.inverse_transform(predicted_labels)
+# Save the trained model, vectorizer, and label encoder to files
+joblib.dump(classifier, model_file)
+joblib.dump(vectorizer, vectorizer_file)
+joblib.dump(label_encoder, label_encoder_file)
 
-# Save predictions to a file
-predictions_df = pd.DataFrame({'description': test_descriptions, 'predicted_tag': predicted_tags})
-predictions_df.to_csv('predictions.csv', index=False)
-
-for desc, tag in zip(test_descriptions, predicted_tags):
-    print(f"Description: '{desc}' => Predicted Tag: {tag}")
-
-# Print final accuracy and loss details
-print(f"Final Accuracy: {np.mean(accuracies):.4f}")
-print(f"Final Log Loss: {np.mean(losses):.4f}")
+print(f"Model, vectorizer, and label encoder saved to {model_file}, {vectorizer_file}, and {label_encoder_file}")
