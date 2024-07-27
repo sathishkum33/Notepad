@@ -1,31 +1,41 @@
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import SGDClassifier
 from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split
 
-# Sample data
-descriptions = [
-    "A sweet red fruit with seeds on the outside.",
-    "A long yellow fruit that monkeys love.",
-    "A small red fruit that is often used in pies.",
-    "A round citrus fruit that is orange in color."
-]
-labels = ["strawberry", "banana", "cherry", "orange"]
+# Sample function to generate large dataset (for demonstration purposes)
+def generate_large_dataset(num_rows, num_labels):
+    import random
+    descriptions = [f"Description {i}" for i in range(num_rows)]
+    labels = [f"label_{random.randint(0, num_labels-1)}" for _ in range(num_rows)]
+    return descriptions, labels
+
+# Generate a large dataset (replace this with your actual dataset)
+num_rows = 1000000
+num_labels = 10000
+descriptions, labels = generate_large_dataset(num_rows, num_labels)
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(descriptions, labels, test_size=0.2, random_state=42)
 
 # Create a pipeline that transforms the data and then applies the classifier
-model = make_pipeline(TfidfVectorizer(), MultinomialNB())
+model = make_pipeline(TfidfVectorizer(), SGDClassifier())
 
 # Train the model
-model.fit(descriptions, labels)
+model.fit(X_train, y_train)
 
 # Predict categories for new descriptions
 test_descriptions = [
-    "This fruit is yellow and curved.",
-    "It is a small red fruit used in desserts.",
-    "This fruit is juicy and has a tough orange skin.",
-    "It is red and has seeds on the outside."
+    "Description 1000001",
+    "Description 1000002"
 ]
 
-predicted_fruits = model.predict(test_descriptions)
+predicted_labels = model.predict(test_descriptions)
 
-for desc, fruit in zip(test_descriptions, predicted_fruits):
-    print(f"Description: '{desc}' => Predicted Fruit: {fruit}")
+for desc, label in zip(test_descriptions, predicted_labels):
+    print(f"Description: '{desc}' => Predicted Label: {label}")
+
+# Evaluate the model
+accuracy = model.score(X_test, y_test)
+print(f"Accuracy: {accuracy:.2f}")
