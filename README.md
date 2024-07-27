@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import LabelEncoder
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.utils import shuffle
 
@@ -17,7 +18,8 @@ file_path = 'path/to/your/large_dataset.csv'
 
 # Initialize vectorizer, classifier, and label encoder
 vectorizer = TfidfVectorizer()
-classifier = SGDClassifier(loss='log', average=True)  # Enable probability estimates
+base_classifier = SGDClassifier(loss='log', average=True)  # Enable probability estimates
+classifier = CalibratedClassifierCV(base_classifier, method='sigmoid', cv='prefit')
 label_encoder = LabelEncoder()
 
 # Define variables to track accuracy and loss
@@ -40,15 +42,21 @@ for chunk in load_data_in_chunks(file_path):
         labels_encoded = label_encoder.transform(tags)
     
     # Transform descriptions to TF-IDF features
-    X_batch = vectorizer.fit_transform(descriptions) if first_batch else vectorizer.transform(descriptions)
+    if first_batch:
+        X_batch = vectorizer.fit_transform(descriptions)
+    else:
+        X_batch = vectorizer.transform(descriptions)
+    
     y_batch = labels_encoded
     
     # Incrementally train the model
     if first_batch:
-        classifier.partial_fit(X_batch, y_batch, classes=np.unique(labels_encoded))
+        base_classifier.partial_fit(X_batch, y_batch, classes=np.unique(labels_encoded))
+        classifier.fit(X_batch, y_batch)
         first_batch = False
     else:
-        classifier.partial_fit(X_batch, y_batch)
+        base_classifier.partial_fit(X_batch, y_batch)
+        classifier.fit(X_batch, y_batch)
     
     # Predict on the current batch
     predictions = classifier.predict(X_batch)
