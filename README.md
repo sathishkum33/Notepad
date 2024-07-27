@@ -1,10 +1,12 @@
+import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
+from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import make_pipeline
-from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 
-# Sample function to generate large dataset (for demonstration purposes)
+# Function to generate large dataset (for demonstration purposes)
 def generate_large_dataset(num_rows, num_labels):
     import random
     descriptions = [f"Description {i}" for i in range(num_rows)]
@@ -16,26 +18,40 @@ num_rows = 1000000
 num_labels = 10000
 descriptions, labels = generate_large_dataset(num_rows, num_labels)
 
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(descriptions, labels, test_size=0.2, random_state=42)
+# Shuffle the data
+descriptions, labels = shuffle(descriptions, labels, random_state=42)
 
-# Create a pipeline that transforms the data and then applies the classifier
-model = make_pipeline(TfidfVectorizer(), SGDClassifier())
+# Encode the labels
+label_encoder = LabelEncoder()
+labels_encoded = label_encoder.fit_transform(labels)
 
-# Train the model
-model.fit(X_train, y_train)
+# Create a TfidfVectorizer instance
+vectorizer = TfidfVectorizer()
 
-# Predict categories for new descriptions
-test_descriptions = [
-    "Description 1000001",
-    "Description 1000002"
-]
+# Create a SGDClassifier instance
+classifier = SGDClassifier()
 
-predicted_labels = model.predict(test_descriptions)
+# Define batch size
+batch_size = 10000
+
+# Process the data in batches
+for start in range(0, num_rows, batch_size):
+    end = start + batch_size
+    X_batch = vectorizer.fit_transform(descriptions[start:end])
+    y_batch = labels_encoded[start:end]
+
+    if start == 0:
+        # For the first batch, use the full fit method
+        classifier.partial_fit(X_batch, y_batch, classes=np.unique(labels_encoded))
+    else:
+        # For subsequent batches, use partial_fit
+        classifier.partial_fit(X_batch, y_batch)
+
+# To evaluate the model, generate a test set
+test_descriptions = ["Description 1000001", "Description 1000002"]
+X_test = vectorizer.transform(test_descriptions)
+predicted_labels = classifier.predict(X_test)
+predicted_labels = label_encoder.inverse_transform(predicted_labels)
 
 for desc, label in zip(test_descriptions, predicted_labels):
     print(f"Description: '{desc}' => Predicted Label: {label}")
-
-# Evaluate the model
-accuracy = model.score(X_test, y_test)
-print(f"Accuracy: {accuracy:.2f}")
