@@ -2,10 +2,9 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
-from sklearn.preprocessing import LabelEncoder
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, log_loss
-from sklearn.utils import shuffle
 
 # Load data in chunks
 def load_data_in_chunks(file_path, chunksize=10000):
@@ -18,7 +17,7 @@ file_path = 'path/to/your/large_dataset.csv'
 
 # Initialize vectorizer, classifier, and label encoder
 vectorizer = TfidfVectorizer()
-base_classifier = SGDClassifier(loss='log', average=True)  # Enable probability estimates
+base_classifier = SGDClassifier(loss='log')  # Logistic regression for probability estimates
 classifier = CalibratedClassifierCV(base_classifier, method='sigmoid', cv='prefit')
 label_encoder = LabelEncoder()
 
