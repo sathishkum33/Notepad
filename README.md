@@ -3,7 +3,6 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import LabelEncoder
-from sklearn.pipeline import make_pipeline
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.utils import shuffle
 
@@ -18,7 +17,7 @@ file_path = 'path/to/your/large_dataset.csv'
 
 # Initialize vectorizer, classifier, and label encoder
 vectorizer = TfidfVectorizer()
-classifier = SGDClassifier()
+classifier = SGDClassifier(loss='log', average=True)  # Enable probability estimates
 label_encoder = LabelEncoder()
 
 # Define variables to track accuracy and loss
