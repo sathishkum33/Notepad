@@ -1,15 +1,16 @@
-import fasttext
+import nltk
+from nltk.tokenize import word_tokenize
 
-# Train a model (assuming you have training data in 'train.txt' with labels '__label__db_execution' and '__label__other')
-# model = fasttext.train_supervised(input="train.txt")
+nltk.download('punkt')
 
-# Load a pre-trained model
-# model = fasttext.load_model("model.bin")
+def contains_sql_keywords(input_text):
+    sql_keywords = ["select", "insert", "update", "delete", "execute", "drop", "join", "create", "alter"]
+    words = word_tokenize(input_text.lower())
+    for keyword in sql_keywords:
+        if keyword in words:
+            return True
+    return False
 
-def classify_input(input_text):
-    prediction = model.predict(input_text)
-    return prediction[0][0]  # Returns the most likely label
-
-# Example usage (with a pre-trained model)
-# input_text = "SELECT * FROM users WHERE id = 1"
-# print(classify_input(input_text))  # Output: "__label__db_execution"
+# Example usage
+input_text = "SELECT * FROM users WHERE id = 1"
+print(contains_sql_keywords(input_text))  # Output: True
