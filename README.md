@@ -1,15 +1,15 @@
-from transformers import pipeline
+import fasttext
 
-# Load a pre-trained model for text classification
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+# Train a model (assuming you have training data in 'train.txt' with labels '__label__db_execution' and '__label__other')
+# model = fasttext.train_supervised(input="train.txt")
 
-# Labels for classification
-labels = ["DB Execution", "Other"]
+# Load a pre-trained model
+# model = fasttext.load_model("model.bin")
 
 def classify_input(input_text):
-    result = classifier(input_text, candidate_labels=labels)
-    return result["labels"][0]  # Returns the most likely label
+    prediction = model.predict(input_text)
+    return prediction[0][0]  # Returns the most likely label
 
-# Example usage
-input_text = "SELECT * FROM users WHERE id = 1"
-print(classify_input(input_text))  # Output: "DB Execution"
+# Example usage (with a pre-trained model)
+# input_text = "SELECT * FROM users WHERE id = 1"
+# print(classify_input(input_text))  # Output: "__label__db_execution"
