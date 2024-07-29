@@ -1,16 +1,24 @@
-import nltk
-from nltk.tokenize import word_tokenize
+import re
 
-nltk.download('punkt')
+# Example regex pattern
+pattern = r'\b(?:hk|uk)[LSAWXZN][PVXG][ADIM][DPSTU]\b'
 
-def contains_sql_keywords(input_text):
-    sql_keywords = ["select", "insert", "update", "delete", "execute", "drop", "join", "create", "alter"]
-    words = word_tokenize(input_text.lower())
-    for keyword in sql_keywords:
-        if keyword in words:
-            return True
-    return False
+# Test strings
+test_strings = [
+    "hkLSAD",
+    "ukNPGD",
+    "hksvmd",
+    "UKLVID",
+    "uKPVID",
+    "hkwdat",
+    "Ukxpud"
+]
 
-# Example usage
-input_text = "SELECT * FROM users WHERE id = 1"
-print(contains_sql_keywords(input_text))  # Output: True
+# Function to check if all letters are either uppercase or lowercase
+def is_same_case(s):
+    return s.islower() or s.isupper()
+
+# Find matches
+matches = [s for s in test_strings if re.match(pattern, s) and is_same_case(s)]
+
+print(matches)
