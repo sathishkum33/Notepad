@@ -1,24 +1,12 @@
 import re
 
-# Example regex pattern
-pattern = r'\b(?:hk|uk)[LSAWXZN][PVXG][ADIM][DPSTU][a-zA-Z0-9]*\b'
+def match_pattern(input_string):
+    pattern = r'^(HK|UK)[LSAWXZN][PVXG][ADIM][DPSTU].*$'
+    if re.match(pattern, input_string):
+        return True
+    else:
+        return False
 
-# Test strings
-test_strings = [
-    "hkLSADexample",
-    "ukNPGDtest123",
-    "hksvmdother",
-    "UKLVIDmore",
-    "ukPVIDextra",
-    "hkwdatanything",
-    "Ukxpud999"
-]
-
-# Function to check if the first six characters are either all uppercase or all lowercase
-def is_same_case(s):
-    return s[:6].islower() or s[:6].isupper()
-
-# Find matches
-matches = [s for s in test_strings if re.match(pattern, s) and is_same_case(s)]
-
-print(matches)
+# Example usage:
+input_string = "HKLPAD123"
+print(match_pattern(input_string))  # Output: True or False based on input_string
