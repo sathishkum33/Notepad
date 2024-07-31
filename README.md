@@ -1,1 +1,38 @@
-Slide 1: Overview of AI Model for ADO TicketsTitle: AI Model for ADO Tickets ManagementContent:Introduction:Overview of the AI model trained with Azure DevOps (ADO) tickets.Purpose: To automate ticket management and enhance operational efficiency.Key Features:Tag Detection:Automatically detects and categorizes tags based on ticket content.Improves the accuracy and speed of ticket classification.SQL Execution:Executes SQL queries as part of ticket resolution.Automates routine database operations and reduces manual intervention.Application Restart:Automatically restarts applications when necessary.Ensures minimal downtime and faster issue resolution.Benefits:Enhanced productivity through automation.Reduced manual errors.Faster ticket resolution times.Improved system reliability and uptime.Slide 2: Future Enhancements and RoadmapTitle: Future Enhancements and RoadmapContent:Planned Enhancements:Natural Language Processing (NLP):Improve the model's ability to understand and process complex user queries.Enable more accurate and context-aware responses.Predictive Analytics:Predict potential issues before they occur.Proactive resolution of incidents based on historical data analysis.Integration with Monitoring Tools:Integrate with existing monitoring tools (e.g., Splunk, Prometheus).Automatically create and manage tickets based on real-time system alerts.User Feedback Loop:Implement a feedback mechanism for continuous learning.Refine and improve model accuracy based on user interactions.Long-term Vision:Self-Healing Systems:Develop capabilities for automatic detection and resolution of issues.Create a fully autonomous operational environment.Cross-Platform Integration:Extend support to other ticketing and incident management systems.Seamless integration across various platforms and tools.Call to Action:Engage with stakeholders for feedback and collaboration.Define clear milestones and timelines for feature rollouts.Foster a culture of continuous improvement and innovation.
+# actions.py
+import requests
+from rasa_sdk import Action, Tracker
+from rasa_sdk.executor import CollectingDispatcher
+
+class ActionGetCpuUsage(Action):
+    def name(self):
+        return "action_get_cpu_usage"
+
+    def run(self, dispatcher, tracker, domain):
+        prometheus_url = "http://your-prometheus-endpoint/api/v1/query"
+        query = "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode='idle'}[5m])) * 100)"
+
+        response = requests.get(prometheus_url, params={'query': query})
+
+        if response.status_code == 200:
+            data = response.json()
+            cpu_usage = data['data']['result'][0]['value'][1]
+            dispatcher.utter_message(text=f"Current CPU Usage: {cpu_usage}%")
+        else:
+            dispatcher.utter_message(text="Error querying Prometheus API for CPU usage.")
+
+class ActionGetRamUsage(Action):
+    def name(self):
+        return "action_get_ram_usage"
+
+    def run(self, dispatcher, tracker, domain):
+        prometheus_url = "http://your-prometheus-endpoint/api/v1/query"
+        query = "sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes) * 100"
+
+        response = requests.get(prometheus_url, params={'query': query})
+
+        if response.status_code == 200:
+            data = response.json()
+            ram_usage = data['data']['result'][0]['value'][1]
+            dispatcher.utter_message(text=f"Current RAM Usage: {ram_usage}%")
+        else:
+            dispatcher.utter_message(text="Error querying Prometheus API for RAM usage.")
