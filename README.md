@@ -1,38 +1,44 @@
-# actions.py
 import requests
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
 
-class ActionGetCpuUsage(Action):
-    def name(self):
-        return "action_get_cpu_usage"
+class ActionGetOpenTickets(Action):
 
-    def run(self, dispatcher, tracker, domain):
-        prometheus_url = "http://your-prometheus-endpoint/api/v1/query"
-        query = "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode='idle'}[5m])) * 100)"
+    def name(self) -> str:
+        return "action_get_open_tickets"
 
-        response = requests.get(prometheus_url, params={'query': query})
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: dict):
+        # Get the area path from the user's message
+        area_path = tracker.get_slot('area_path')
 
-        if response.status_code == 200:
-            data = response.json()
-            cpu_usage = data['data']['result'][0]['value'][1]
-            dispatcher.utter_message(text=f"Current CPU Usage: {cpu_usage}%")
-        else:
-            dispatcher.utter_message(text="Error querying Prometheus API for CPU usage.")
+        if not area_path:
+            dispatcher.utter_message(text="I couldn't find the area path in your request. Please provide a valid area path.")
+            return []
 
-class ActionGetRamUsage(Action):
-    def name(self):
-        return "action_get_ram_usage"
+        # Define the Azure DevOps organization, project, and API endpoint
+        organization = "your_organization"
+        project = "your_project"
+        api_version = "6.0"
 
-    def run(self, dispatcher, tracker, domain):
-        prometheus_url = "http://your-prometheus-endpoint/api/v1/query"
-        query = "sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes) * 100"
+        # Define the query URL
+        url = f"https://dev.azure.com/{organization}/{project}/_apis/wit/wiql?api-version={api_version}"
 
-        response = requests.get(prometheus_url, params={'query': query})
+        # Define the WIQL (Work Item Query Language) query
+        wiql_query = {
+            "query": f"SELECT [System.Id] FROM workitems WHERE [System.TeamProject] = '{project}' AND [System.AreaPath] = '{area_path}' AND [System.State] = 'Active'"
+        }
 
-        if response.status_code == 200:
-            data = response.json()
-            ram_usage = data['data']['result'][0]['value'][1]
-            dispatcher.utter_message(text=f"Current RAM Usage: {ram_usage}%")
-        else:
-            dispatcher.utter_message(text="Error querying Prometheus API for RAM usage.")
+        # Azure DevOps Personal Access Token (PAT)
+        pat = "your_personal_access_token"
+
+        # Make the request to Azure DevOps
+        response = requests.post(url, json=wiql_query, auth=('', pat))
+        data = response.json()
+
+        # Count the number of open tickets
+        open_ticket_count = len(data.get('workItems', []))
+
+        # Send the response back to the user
+        dispatcher.utter_message(text=f"The total number of open tickets for the area path {area_path} is {open_ticket_count}.")
+
+        return []
