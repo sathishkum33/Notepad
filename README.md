@@ -1,44 +1,26 @@
-import requests
-from rasa_sdk import Action, Tracker
-from rasa_sdk.executor import CollectingDispatcher
+#!/bin/bash
 
-class ActionGetOpenTickets(Action):
+# Function to get the Java version of a process
+get_java_version() {
+    local pid=$1
+    local java_cmd=$(ps -p $pid -o args= | awk '{print $1}')
+    $java_cmd -version 2>&1 | head -n 1
+}
 
-    def name(self) -> str:
-        return "action_get_open_tickets"
+# Get the list of Java processes (assuming microservices are Java-based)
+java_processes=$(ps aux | grep '[j]ava' | awk '{print $2}')
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: dict):
-        # Get the area path from the user's message
-        area_path = tracker.get_slot('area_path')
+if [ -z "$java_processes" ]; then
+    echo "No Java processes found."
+    exit 1
+fi
 
-        if not area_path:
-            dispatcher.utter_message(text="I couldn't find the area path in your request. Please provide a valid area path.")
-            return []
+echo "Listing all microservice processes and their Java versions:"
 
-        # Define the Azure DevOps organization, project, and API endpoint
-        organization = "your_organization"
-        project = "your_project"
-        api_version = "6.0"
-
-        # Define the query URL
-        url = f"https://dev.azure.com/{organization}/{project}/_apis/wit/wiql?api-version={api_version}"
-
-        # Define the WIQL (Work Item Query Language) query
-        wiql_query = {
-            "query": f"SELECT [System.Id] FROM workitems WHERE [System.TeamProject] = '{project}' AND [System.AreaPath] = '{area_path}' AND [System.State] = 'Active'"
-        }
-
-        # Azure DevOps Personal Access Token (PAT)
-        pat = "your_personal_access_token"
-
-        # Make the request to Azure DevOps
-        response = requests.post(url, json=wiql_query, auth=('', pat))
-        data = response.json()
-
-        # Count the number of open tickets
-        open_ticket_count = len(data.get('workItems', []))
-
-        # Send the response back to the user
-        dispatcher.utter_message(text=f"The total number of open tickets for the area path {area_path} is {open_ticket_count}.")
-
-        return []
+for pid in $java_processes; do
+    process_info=$(ps -p $pid -o pid,comm,cmd=)
+    java_version=$(get_java_version $pid)
+    echo "$process_info"
+    echo "Java version: $java_version"
+    echo "------------------------------------"
+done
