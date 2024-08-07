@@ -1,26 +1,31 @@
 #!/bin/bash
 
-# Function to get the Java version of a process
-get_java_version() {
-    local pid=$1
-    local java_cmd=$(ps -p $pid -o args= | awk '{print $1}')
-    $java_cmd -version 2>&1 | head -n 1
-}
+# Directories to compare
+config_dir="config"
+backup_dir="config_bkup"
 
-# Get the list of Java processes (assuming microservices are Java-based)
-java_processes=$(ps aux | grep '[j]ava' | awk '{print $2}')
+# Loop through each file in the config directory
+for config_file in "$config_dir"/*.yml; do
+    # Extract the filename without the directory
+    filename=$(basename "$config_file")
 
-if [ -z "$java_processes" ]; then
-    echo "No Java processes found."
-    exit 1
-fi
+    # Construct the corresponding backup file path
+    backup_file="$backup_dir/$filename"
 
-echo "Listing all microservice processes and their Java versions:"
+    # Check if the backup file exists
+    if [ -e "$backup_file" ]; then
+        echo "Comparing $filename..."
+        # Perform the diff
+        diff_output=$(diff "$config_file" "$backup_file")
 
-for pid in $java_processes; do
-    process_info=$(ps -p $pid -o pid,comm,cmd=)
-    java_version=$(get_java_version $pid)
-    echo "$process_info"
-    echo "Java version: $java_version"
-    echo "------------------------------------"
+        if [ -n "$diff_output" ]; then
+            echo "Differences found in $filename:"
+            echo "$diff_output"
+        else
+            echo "No differences in $filename."
+        fi
+        echo "------------------------------------"
+    else
+        echo "Backup file $backup_file not found."
+    fi
 done
