@@ -1,13 +1,24 @@
-1. Centralized Management: ADO is centrally managed, and its processes are standardized across SCB, which I find beneficial for maintaining consistency and streamlining operations.
+#!/bin/bash
 
+# Define variables
+NEW_JAR_URL="http://artifacr.com/test_job-4.10.20240910.2.jar"
+NEW_JAR_NAME="test_job-4.10.20240910.2.jar"
+TARGET_JAR_NAME="test_job.jar"
 
+# Download the new jar
+echo "Downloading the new jar..."
+curl -O $NEW_JAR_URL
 
-Cons:
+# Check if the old jar exists and remove it
+if [ -f "$TARGET_JAR_NAME" ]; then
+    echo "Old jar exists, removing $TARGET_JAR_NAME..."
+    rm -f $TARGET_JAR_NAME
+else
+    echo "No existing jar found with name $TARGET_JAR_NAME."
+fi
 
-1. Frequent Issues and Slowness: I frequently encounter performance issues and slowness with ADO, which affects my workflow and productivity.
+# Rename the new jar to remove the version
+echo "Renaming $NEW_JAR_NAME to $TARGET_JAR_NAME..."
+mv $NEW_JAR_NAME $TARGET_JAR_NAME
 
-
-2. Instability Due to Frequent Changes: The regular updates and changes in ADO often have a negative impact on its stability, causing disruptions in my work.
-
-
-3. Lack of Immediate Support: When I report issues via email or ticketing systems, the response from the ADO team is often delayed, making it difficult to resolve problems quickly.
+echo "Process completed."
