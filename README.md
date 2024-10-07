@@ -13,12 +13,15 @@ TARGET_JAR_NAME=$(echo $NEW_JAR_NAME | sed -E 's/-[0-9.]+\.jar$/.jar/')
 echo "Downloading the new jar: $NEW_JAR_NAME..."
 curl -O $NEW_JAR_URL
 
-# Check if the old jar exists and remove it
-if [ -f "$TARGET_JAR_NAME" ]; then
-    echo "Old jar exists, removing $TARGET_JAR_NAME..."
+# Check if the old jar exists as a symlink
+if [ -L "$TARGET_JAR_NAME" ]; then
+    echo "Old jar is a symlink, removing the symlink $TARGET_JAR_NAME..."
+    unlink $TARGET_JAR_NAME
+elif [ -f "$TARGET_JAR_NAME" ]; then
+    echo "Old jar exists as a regular file, removing $TARGET_JAR_NAME..."
     rm -f $TARGET_JAR_NAME
 else
-    echo "No existing jar found with name $TARGET_JAR_NAME."
+    echo "No existing jar or symlink found with name $TARGET_JAR_NAME."
 fi
 
 # Rename the new jar to remove the version
