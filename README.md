@@ -1,2 +1,2 @@
-Remediate SSL certificate vulnerabilities by regularly updating and renewing certificates, using strong encryption algorithms (like TLS 1.2/1.3), implementing certificate pinning, and promptly revoking and replacing compromised or expired certificates.
+Remediate web application vulnerabilities by conducting regular security assessments, patching known vulnerabilities, implementing input validation and secure coding practices, and using security tools like firewalls, encryption, and multi-factor authentication (MFA).
 
