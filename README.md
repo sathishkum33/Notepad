@@ -1,2 +1,2 @@
-Remediate OS vulnerabilities by applying timely patches, enforcing access controls, and enabling security features, while securing networks through encryption, vulnerability scanning, segmentation, and IDPS deployment.
+Remediate SSH cipher vulnerabilities by disabling outdated and weak ciphers, enabling strong encryption algorithms (such as AES), enforcing SSH protocol version 2, and regularly updating SSH configurations and software.
 
