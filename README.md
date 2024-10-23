@@ -1,2 +1,2 @@
-Remediate web application vulnerabilities by conducting regular security assessments, patching known vulnerabilities, implementing input validation and secure coding practices, and using security tools like firewalls, encryption, and multi-factor authentication (MFA).
+To mitigate SQL injection vulnerabilities, use prepared statements and parameterized queries, validate and sanitize all user inputs, implement proper error handling, and limit database permissions to reduce the impact of potential attacks.
 
