@@ -1,2 +1,11 @@
-To address vulnerabilities from application domain changes, ensure proper access controls, validate and sanitize data transfers between domains, update configurations and security policies, and thoroughly test for broken authentication, cross-site scripting (XSS), and cross-domain communication risks.
-
+POST /_security/role_mapping/admin_role
+{
+  "roles": [ "superuser", "kibana_admin" ],
+  "enabled": true,
+  "rules": {
+    "any": [
+      { "field": { "username": "svc-account@your-domain.com" } },
+      { "field": { "groups": "CN=adgroup,OU=Applications,OU=Groups,DC=your-domain,DC=com" } }
+    ]
+  }
+}
