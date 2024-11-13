@@ -1,11 +1,11 @@
-POST /_security/role_mapping/admin_role
-{
-  "roles": [ "superuser", "kibana_admin" ],
-  "enabled": true,
-  "rules": {
-    "any": [
-      { "field": { "username": "svc-account@your-domain.com" } },
-      { "field": { "groups": "CN=adgroup,OU=Applications,OU=Groups,DC=your-domain,DC=com" } }
-    ]
-  }
-}
+#!/bin/bash
+
+# Remove the old password (if it exists)
+./metricbeat keystore remove ES_PASSWORD --force
+
+# Automatically add the new password without prompt
+echo "y" | ./metricbeat keystore add ES_PASSWORD <<EOF
+new_password_here
+EOF
+
+echo "Password updated successfully in the keystore."
