@@ -1,7 +1,13 @@
-SELECT DISTINCT
-    OBJECT_NAME(so.object_id) AS ObjectName,
-    so.type_desc AS ObjectType,
-    sm.definition
-FROM sys.sql_modules sm
-JOIN sys.objects so ON sm.object_id = so.object_id
-WHERE sm.definition LIKE '%OtherDatabaseName.%';
+SELECT
+    DB_NAME(s.database_id) AS DatabaseName,
+    s.last_wait_type AS LastWaitType,
+    c.client_net_address AS ClientAddress,
+    s.host_name AS HostName,
+    s.login_name AS LoginName,
+    COUNT(*) OVER (PARTITION BY s.login_name) AS ConnectionCount
+FROM
+    sys.dm_exec_sessions s
+LEFT JOIN
+    sys.dm_exec_connections c ON s.session_id = c.session_id
+WHERE
+    s.is_user_process = 1; -- Exclude system processes
