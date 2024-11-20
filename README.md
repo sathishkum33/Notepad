@@ -1,11 +1,7 @@
-#!/bin/bash
-
-# Remove the old password (if it exists)
-./metricbeat keystore remove ES_PASSWORD --force
-
-# Automatically add the new password without prompt
-echo "y" | ./metricbeat keystore add ES_PASSWORD <<EOF
-new_password_here
-EOF
-
-echo "Password updated successfully in the keystore."
+SELECT DISTINCT
+    OBJECT_NAME(so.object_id) AS ObjectName,
+    so.type_desc AS ObjectType,
+    sm.definition
+FROM sys.sql_modules sm
+JOIN sys.objects so ON sm.object_id = so.object_id
+WHERE sm.definition LIKE '%OtherDatabaseName.%';
