@@ -1,29 +1,52 @@
-# Enable LDAP Authentication
-AUTHENTICATION_BACKENDS = [
-    "django_python3_ldap.auth.LDAPBackend",
-    "django.contrib.auth.backends.ModelBackend",
-]
+from django.contrib.auth.backends import BaseBackend
+from django.contrib.auth.models import User
+from ldap3 import Server, Connection, AUTO_BIND, ALL, NTLM
 
-# LDAP Server Configuration
-LDAP_AUTH_URL = "ldap://your-ad-server.com"  # or "ldaps://your-ad-server.com" for SSL
+class ActiveDirectoryBackend(BaseBackend):
+    """
+    Custom authentication backend for Active Directory.
+    """
 
-# Bind credentials (optional, can be anonymous)
-LDAP_AUTH_CONNECTION_USERNAME = "CN=youradmin,CN=Users,DC=yourdomain,DC=com"
-LDAP_AUTH_CONNECTION_PASSWORD = "yourpassword"
+    def authenticate(self, request, username=None, password=None):
+        AD_SERVER = "ldap://your-ad-server.com"  # Change to your AD server
+        AD_DOMAIN = "yourdomain.com"  # Change to your domain
+        AD_SEARCH_BASE = "OU=Users,DC=yourdomain,DC=com"  # Change to your AD structure
+        AD_GROUP = "CN=YourADGroup,OU=Groups,DC=yourdomain,DC=com"  # Change to your group
+        
+        # Construct user DN
+        user_dn = f"{AD_DOMAIN}\\{username}"
+        
+        try:
+            # Connect to AD and authenticate
+            server = Server(AD_SERVER, get_info=ALL)
+            conn = Connection(server, user=user_dn, password=password, authentication=NTLM, auto_bind=True)
 
-# Search Base
-LDAP_AUTH_SEARCH_BASE = "CN=Users,DC=yourdomain,DC=com"
+            # Check if the user belongs to the specified group
+            conn.search(
+                search_base=AD_SEARCH_BASE,
+                search_filter=f"(sAMAccountName={username})",
+                attributes=["memberOf"],
+            )
 
-# Define the user lookup
-LDAP_AUTH_USER_LOOKUP_FIELDS = ("username",)
+            if not conn.entries:
+                return None
 
-# Attribute mapping (optional)
-LDAP_AUTH_USER_FIELDS = {
-    "username": "sAMAccountName",
-    "first_name": "givenName",
-    "last_name": "sn",
-    "email": "mail",
-}
+            # Extract group memberships
+            user_groups = conn.entries[0]["memberOf"]
 
-# Cache authentication results (optional)
-LDAP_AUTH_CACHE_TIMEOUT = 3600  # 1 hour
+            # Check if user is in the required AD group
+            if any(AD_GROUP in str(group) for group in user_groups):
+                # Check if user exists in Django, if not, create one
+                user, created = User.objects.get_or_create(username=username)
+                return user
+            else:
+                return None
+        except Exception as e:
+            print(f"AD Authentication failed: {e}")
+            return None
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
