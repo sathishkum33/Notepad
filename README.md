@@ -1,19 +1,18 @@
-FROM registry.access.redhat.com/ubi9/python-39
+#!/bin/bash
 
-# Set work directory
-WORKDIR /opt/app
+# Set Airflow environment variables
+export AIRFLOW_HOME=/opt/app/airflow
+export PATH=$PATH:/opt/app/.local/bin
+export AIRFLOW__CORE__LOAD_EXAMPLES=False
+export AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
 
-# Install Airflow and dependencies
-RUN pip install --no-cache-dir apache-airflow==2.7.3 \
-    && mkdir -p /opt/app/airflow \
-    && chmod -R 777 /opt/app/airflow
+# Initialize Airflow metadata database (if not already initialized)
+if [ ! -f "$AIRFLOW_HOME/airflow.db" ]; then
+    airflow db init
+fi
 
-# Copy startup script
-COPY run.sh /opt/app/run.sh
-RUN chmod +x /opt/app/run.sh
+# Start the Airflow scheduler in the background
+airflow scheduler &
 
-# Expose Airflow Web UI port
-EXPOSE 8080
-
-# Set entrypoint
-CMD ["/opt/app/run.sh"]
+# Start the Airflow webserver
+exec airflow webserver
