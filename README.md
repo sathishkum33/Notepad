@@ -1,11 +1,19 @@
-Dear [Dev Team],
+FROM registry.access.redhat.com/ubi9/python-39
 
-I hope you're doing well.
+# Set work directory
+WORKDIR /opt/app
 
-To ensure stability and alignment across teams, we kindly request that no changes be made to the pipeline stages or configurations in Azure DevOps (ADO) without consulting the DevOps team.
+# Install Airflow and dependencies
+RUN pip install --no-cache-dir apache-airflow==2.7.3 \
+    && mkdir -p /opt/app/airflow \
+    && chmod -R 777 /opt/app/airflow
 
-Uncoordinated modifications can lead to missed updates, potential disruptions, and overlooked feedback from the testing team regarding pipeline improvements. To avoid these risks, please reach out to us before making any changes, so we can review and implement them appropriately.
+# Copy startup script
+COPY run.sh /opt/app/run.sh
+RUN chmod +x /opt/app/run.sh
 
-If you have any suggestions or requirements for pipeline adjustments, feel free to coordinate with us, and we’ll work together to ensure a smooth and efficient process.
+# Expose Airflow Web UI port
+EXPOSE 8080
 
-Thanks for your cooperatio
+# Set entrypoint
+CMD ["/opt/app/run.sh"]
