@@ -1,18 +1,1 @@
-#!/bin/bash
-
-# Set Airflow environment variables
-export AIRFLOW_HOME=/opt/app/airflow
-export PATH=$PATH:/opt/app/.local/bin
-export AIRFLOW__CORE__LOAD_EXAMPLES=False
-export AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
-
-# Initialize Airflow metadata database (if not already initialized)
-if [ ! -f "$AIRFLOW_HOME/airflow.db" ]; then
-    airflow db init
-fi
-
-# Start the Airflow scheduler in the background
-airflow scheduler &
-
-# Start the Airflow webserver
-exec airflow webserver
+"Big thanks to the PSS team for their consistent support and efforts in all production-related activities. Your dedication and timely assistance are truly appreciated!"
