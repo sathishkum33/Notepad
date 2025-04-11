@@ -1,1 +1,1 @@
-https://github.com/AccentFuture-dev/Airflow/tree/Main/Airflow-docker
+"Thank you for your support. The other team offered me a promotion, and after careful thought, I accepted and committed to the move. It’s been almost a month since then, so I feel it’s only right to follow through on that commitment. I hope you understand my decision."
