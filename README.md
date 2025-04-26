@@ -1,40 +1,69 @@
 import pkgutil
 import importlib
 import inspect
-from diagrams import Node, __path__ as DIAGRAMS_PATH
+import json
+from diagrams import Diagram, Node
 
-def list_diagrams_modules():
-    """
-    Walk the `diagrams` namespace and return a list of all sub‐module names,
-    e.g. "diagrams.aws.compute", "diagrams.azure.network", etc.
-    """
+# Step 1: Dynamically find all module paths inside diagrams
+def get_all_diagram_modules():
+    import diagrams
     return [
         name
-        for _, name, ispkg in pkgutil.walk_packages(DIAGRAMS_PATH, prefix="diagrams.")
-        if ispkg
+        for _, name, ispkg in pkgutil.walk_packages(
+            diagrams.__path__, prefix="diagrams."
+        )
     ]
 
-def list_all_components():
-    """
-    For each diagrams sub‐module, import it and return a dict mapping
-    lowercase component names to their full class objects.
-    """
-    components = {}
-    for module_name in list_diagrams_modules():
-        module = importlib.import_module(module_name)
-        for cls_name, cls_obj in inspect.getmembers(module, inspect.isclass):
-            if issubclass(cls_obj, Node):
-                key = cls_name.lower()
-                components[key] = cls_obj
-    return components
+# Step 2: Build a component map (lowercase class name -> actual class)
+def build_component_map():
+    component_map = {}
+    module_paths = get_all_diagram_modules()
+    for module_path in module_paths:
+        try:
+            module = importlib.import_module(module_path)
+            for name, cls in inspect.getmembers(module, inspect.isclass):
+                if issubclass(cls, Node) and cls is not Node:
+                    key = name.lower()
+                    component_map[key] = cls
+        except Exception as e:
+            # Some modules might not import cleanly; you can log if needed
+            # print(f"Failed to import {module_path}: {e}")
+            continue
+    return component_map
 
+# Step 3: Load your real-time input (JSON)
+def load_real_time_data():
+    # Example static input for now; replace this with your actual real-time data fetch
+    json_input = """
+    [
+        {"type": "ec2", "label": "Web Server"},
+        {"type": "postgresql", "label": "Database"},
+        {"type": "server", "label": "On-Prem Server"}
+    ]
+    """
+    return json.loads(json_input)
+
+# Step 4: Draw the diagram
+def draw_diagram(components_data, component_map):
+    with Diagram("Dynamic Diagram", show=False):
+        for comp in components_data:
+            comp_type = comp["type"].lower()
+            label = comp["label"]
+            if comp_type not in component_map:
+                print(f"[WARN] Component type '{comp_type}' not found. Skipping.")
+                continue
+            CompClass = component_map[comp_type]
+            CompClass(label)
+
+# --- MAIN ENTRY ---
 if __name__ == "__main__":
-    mods = list_diagrams_modules()
-    print(f"Found {len(mods)} diagrams sub‐modules:")
-    for m in mods:
-        print("  ", m)
+    # Build the component lookup dynamically
+    component_map = build_component_map()
 
-    comps = list_all_components()
-    print(f"\nDiscovered {len(comps)} components:")
-    for name in sorted(comps):
-        print("  ", name, "→", comps[name])
+    # Load incoming component descriptions
+    real_time_components = load_real_time_data()
+
+    # Create diagram
+    draw_diagram(real_time_components, component_map)
+
+    print("Diagram creation completed.")
