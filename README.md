@@ -1,29 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Image Preview</title>
+    <title>SVG Preview</title>
 </head>
 <body>
-    <button id="previewBtn">Preview</button>
-    <img id="generatedImage" style="display:none; max-width: 100%;"/>
-    
+    <button id="previewBtn">Preview SVG</button>
+    <div id="svgContainer"></div>
+
     <script>
         document.getElementById("previewBtn").onclick = function () {
-            const data = { text: "Hello, World!" }; // Example JSON
+            const jsonData = { text: "Hello SVG!" };
 
-            fetch("/generate-image", {
+            fetch("/get-svg/", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
+                headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+                body: JSON.stringify(jsonData)
             })
-            .then(response => response.blob())
-            .then(imageBlob => {
-                const imgURL = URL.createObjectURL(imageBlob);
-                const imgElement = document.getElementById("generatedImage");
-                imgElement.src = imgURL;
-                imgElement.style.display = "block";
-            })
-            .catch(error => console.error("Error:", error));
+            .then(response => response.text())
+            .then(svgContent => {
+                document.getElementById("svgContainer").innerHTML = svgContent;
+            });
+
+            // Helper to get CSRF token
+            function getCSRFToken() {
+                const match = document.cookie.match(/csrftoken=([^;]+)/);
+                return match ? match[1] : '';
+            }
         };
     </script>
 </body>
