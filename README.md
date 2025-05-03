@@ -1,32 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SVG Preview</title>
-</head>
-<body>
-    <button id="previewBtn">Preview SVG</button>
-    <div id="svgContainer"></div>
+from django.http import HttpResponse, Http404
+from django.views.decorators.csrf import csrf_exempt
+import json
+import os
 
-    <script>
-        document.getElementById("previewBtn").onclick = function () {
-            const jsonData = { text: "Hello SVG!" };
+@csrf_exempt  # Use only in development; for production, use CSRF tokens as shown above
+def get_svg(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        filename = data.get("filename", "output.svg")
 
-            fetch("/get-svg/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
-                body: JSON.stringify(jsonData)
-            })
-            .then(response => response.text())
-            .then(svgContent => {
-                document.getElementById("svgContainer").innerHTML = svgContent;
-            });
+        # Adjust this path to your actual SVG directory
+        file_path = os.path.join("media/generated", filename)
 
-            // Helper to get CSRF token
-            function getCSRFToken() {
-                const match = document.cookie.match(/csrftoken=([^;]+)/);
-                return match ? match[1] : '';
-            }
-        };
-    </script>
-</body>
-</html>
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                svg_content = f.read()
+            return HttpResponse(svg_content, content_type="image/svg+xml")
+        else:
+            raise Http404("SVG file not found")
