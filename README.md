@@ -1,20 +1,28 @@
-from django.http import HttpResponse, Http404
-from django.views.decorators.csrf import csrf_exempt
-import json
-import os
+from django.db import models
+from django.contrib.auth.models import User
 
-@csrf_exempt  # Use only in development; for production, use CSRF tokens as shown above
-def get_svg(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        filename = data.get("filename", "output.svg")
+class Application(models.Model):
+    name = models.CharField(max_length=100, unique=True)
 
-        # Adjust this path to your actual SVG directory
-        file_path = os.path.join("media/generated", filename)
+    def __str__(self):
+        return self.name
 
-        if os.path.exists(file_path):
-            with open(file_path, "r", encoding="utf-8") as f:
-                svg_content = f.read()
-            return HttpResponse(svg_content, content_type="image/svg+xml")
-        else:
-            raise Http404("SVG file not found")
+class Role(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    priority = models.IntegerField(default=0)  # For role hierarchy, optional
+
+    def __str__(self):
+        return self.name
+
+class UserApplicationRole(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    application = models.ForeignKey(Application, on_delete=models.CASCADE)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'application', 'role')
+        verbose_name = 'User Role Assignment'
+        verbose_name_plural = 'User Role Assignments'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.application.name} - {self.role.name}"
