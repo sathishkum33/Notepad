@@ -1,16 +1,17 @@
 from django.contrib import admin
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import Application, Role, UserApplicationRole
 
-@admin.register(Application)
-class ApplicationAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+class UserApplicationRoleInline(admin.TabularInline):
+    model = UserApplicationRole
+    extra = 1  # Show 1 empty row by default
+    autocomplete_fields = ['application', 'role']
 
-@admin.register(Role)
-class RoleAdmin(admin.ModelAdmin):
-    list_display = ('name', 'priority')
+# Extend the existing UserAdmin
+class UserAdmin(BaseUserAdmin):
+    inlines = [UserApplicationRoleInline]
 
-@admin.register(UserApplicationRole)
-class UserApplicationRoleAdmin(admin.ModelAdmin):
-    list_display = ('user', 'application', 'role')
-    list_filter = ('application', 'role', 'user')
-    search_fields = ('user__username', 'application__name', 'role__name')
+# Unregister and re-register the User model
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
