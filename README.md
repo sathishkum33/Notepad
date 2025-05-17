@@ -1,102 +1,144 @@
-import paramiko
-import json
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Server Monitor</title>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
 
-class ServerInspector:
-    def __init__(self, ip, username, password, port=22):
-        self.ip = ip
-        self.username = username
-        self.password = password
-        self.port = port
-        self.ssh = None
-        self.os_type = "unknown"
+    .server {
+      background-color: #161b22;
+      border-radius: 16px;
+      padding: 24px;
+      width: 320px;
+      box-shadow: 0 0 15px rgba(0, 255, 150, 0.2);
+    }
 
-    def connect(self):
-        self.ssh = paramiko.SSHClient()
-        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        try:
-            self.ssh.connect(
-                hostname=self.ip,
-                username=self.username,
-                password=self.password,
-                port=self.port,
-                timeout=10
-            )
-            return True
-        except Exception as e:
-            self.ssh = None
-            self.error = str(e)
-            return False
+    .resource {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+    }
 
-    def disconnect(self):
-        if self.ssh:
-            self.ssh.close()
+    .resource:last-child {
+      margin-bottom: 0;
+    }
 
-    def get_os_type(self):
-        output = self._exec("uname || ver")
-        if "linux" in output.lower():
-            self.os_type = "linux"
-        elif "windows" in output.lower():
-            self.os_type = "windows"
-        elif "darwin" in output.lower():
-            self.os_type = "macos"
-        else:
-            self.os_type = "unknown"
-        return self.os_type
+    .icon {
+      width: 28px;
+      height: 28px;
+      margin-right: 10px;
+    }
 
-    def _exec(self, command):
-        try:
-            stdin, stdout, stderr = self.ssh.exec_command(command)
-            return stdout.read().decode().strip()
-        except Exception:
-            return ""
+    .details {
+      flex: 1;
+    }
 
-    def _safe_exec(self, command, fallback="0", parse_func=lambda x: x.strip()):
-        result = self._exec(command)
-        try:
-            return parse_func(result) if result else fallback
-        except Exception:
-            return fallback
+    .label {
+      margin-bottom: 4px;
+    }
 
-    def collect_resources(self):
-        if not self.ssh:
-            return {"error": "Not connected"}
-        self.get_os_type()
+    .bar-container {
+      background-color: #2f363d;
+      border-radius: 8px;
+      height: 16px;
+      overflow: hidden;
+    }
 
-        if self.os_type in ["linux", "macos"]:
-            return {
-                "cpu_count": self._safe_exec("nproc"),
-                "memory_total_mb": self._safe_exec(
-                    "grep MemTotal /proc/meminfo",
-                    parse_func=lambda x: str(int(x.split()[1]) // 1024)
-                ),
-                "disk_total_gb": self._safe_exec(
-                    "df --total -BG | grep total",
-                    parse_func=lambda x: x.split()[1].replace("G", "")
-                )
-            }
-        elif self.os_type == "windows":
-            return {
-                "cpu_count": self._safe_exec(
-                    "wmic cpu get NumberOfLogicalProcessors /value",
-                    parse_func=lambda x: x.split("=")[-1]
-                ),
-                "memory_total_mb": self._safe_exec(
-                    "wmic ComputerSystem get TotalPhysicalMemory",
-                    parse_func=lambda x: str(int(int(x.splitlines()[-1]) / (1024 * 1024)))
-                ),
-                "disk_total_gb": self._safe_exec(
-                    'powershell -command "(Get-PSDrive -PSProvider \'FileSystem\' | Measure-Object -Property Used -Sum).Sum / 1GB"',
-                    parse_func=lambda x: x.strip().splitlines()[-1]
-                )
-            }
-        else:
-            return {"error": "Unsupported OS"}
+    .bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(to right, #00ff99, #00ccff);
+      transition: width 0.5s ease-in-out;
+    }
 
-    def inspect(self):
-        if not self.connect():
-            return {"error": f"SSH connection failed: {self.error}"}
-        try:
-            resources = self.collect_resources()
-            return {"os": self.os_type, "resources": resources}
-        finally:
-            self.disconnect()
+    .os-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .os-icons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .os-icons img {
+      width: 24px;
+      height: 24px;
+    }
+
+    .os-name {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="server">
+    <div class="resource">
+      <img src="https://img.icons8.com/ios-filled/50/microchip.png" class="icon" alt="RAM">
+      <div class="details">
+        <div class="label">RAM: <span id="ram-value">0</span>/16 GB</div>
+        <div class="bar-container"><div class="bar" id="ram-bar"></div></div>
+      </div>
+    </div>
+
+    <div class="resource">
+      <img src="https://img.icons8.com/ios-filled/50/cpu.png" class="icon" alt="CPU">
+      <div class="details">
+        <div class="label">CPU: <span id="cpu-value">0</span>/4 Cores</div>
+        <div class="bar-container"><div class="bar" id="cpu-bar"></div></div>
+      </div>
+    </div>
+
+    <div class="resource">
+      <img src="https://img.icons8.com/ios-filled/50/hdd.png" class="icon" alt="Disk">
+      <div class="details">
+        <div class="label">Disk: <span id="disk-value">0</span>/300 GB</div>
+        <div class="bar-container"><div class="bar" id="disk-bar"></div></div>
+      </div>
+    </div>
+
+    <div class="resource os-section">
+      <div class="os-icons">
+        <img src="https://img.icons8.com/ios-filled/50/windows8.png" alt="Windows">
+        <img src="https://img.icons8.com/ios-filled/50/linux.png" alt="Linux">
+        <img src="https://img.icons8.com/ios-filled/50/mac-os.png" alt="macOS">
+      </div>
+      <div class="os-name" id="os-name">RHEL</div>
+    </div>
+  </div>
+
+  <script>
+    function updateResources() {
+      const ramUsed = Math.floor(Math.random() * 17);  // 0–16
+      const cpuUsed = Math.floor(Math.random() * 5);   // 0–4
+      const diskUsed = Math.floor(Math.random() * 301); // 0–300
+
+      document.getElementById('ram-value').textContent = ramUsed;
+      document.getElementById('cpu-value').textContent = cpuUsed;
+      document.getElementById('disk-value').textContent = diskUsed;
+
+      document.getElementById('ram-bar').style.width = (ramUsed / 16) * 100 + '%';
+      document.getElementById('cpu-bar').style.width = (cpuUsed / 4) * 100 + '%';
+      document.getElementById('disk-bar').style.width = (diskUsed / 300) * 100 + '%';
+
+      // Random OS selector
+      const osOptions = ['RHEL', 'Debian', 'Ubuntu', 'Windows 10', 'macOS'];
+      const randomOS = osOptions[Math.floor(Math.random() * osOptions.length)];
+      document.getElementById('os-name').textContent = randomOS;
+    }
+
+    setInterval(updateResources, 1000);
+    updateResources();
+  </script>
+</body>
+</html>
