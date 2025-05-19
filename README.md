@@ -1,61 +1,30 @@
-import socket
-import subprocess
-import platform
-import re
+import winrm
 
-def ping_ttl(ip):
+def verify_winrm_credentials(ip, username, password, use_https=False):
     try:
-        if platform.system().lower() == "windows":
-            output = subprocess.check_output(["ping", "-n", "1", ip], timeout=3).decode()
-        else:
-            output = subprocess.check_output(["ping", "-c", "1", ip], timeout=3).decode()
-        match = re.search(r"ttl[=|:](\d+)", output, re.IGNORECASE)
-        if match:
-            return int(match.group(1))
-    except Exception:
-        return None
+        protocol = 'https' if use_https else 'http'
+        port = '5986' if use_https else '5985'
+        url = f'{protocol}://{ip}:{port}/wsman'
 
-def check_port(ip, port, timeout=2):
-    try:
-        with socket.create_connection((ip, port), timeout=timeout):
+        # Use NTLM if you're authenticating with a local or domain account
+        session = winrm.Session(url, auth=(username, password), transport='ntlm')
+
+        result = session.run_cmd('hostname')  # simple, safe test command
+
+        if result.status_code == 0:
+            print(f"SUCCESS: Authenticated as {username}, Hostname: {result.std_out.decode().strip()}")
             return True
-    except:
+        else:
+            print(f"ERROR: Command failed, code {result.status_code}")
+            return False
+
+    except Exception as e:
+        print(f"FAILED: {e}")
         return False
 
-def identify_os(ip):
-    os_score = {"Windows": 0, "Linux": 0}
-    
-    # TTL hint
-    ttl = ping_ttl(ip)
-    if ttl:
-        if ttl <= 64:
-            os_score["Linux"] += 1
-        elif ttl <= 128:
-            os_score["Windows"] += 1
-    
-    # Port checks
-    ports = {
-        22: "Linux",        # SSH
-        3389: "Windows",    # RDP
-        445: "Windows",     # SMB
-        135: "Windows",     # RPC
-        5985: "Windows",    # WinRM HTTP
-        111: "Linux"        # RPCBind
-    }
-
-    for port, os_name in ports.items():
-        if check_port(ip, port):
-            os_score[os_name] += 2
-
-    # Final decision
-    if os_score["Windows"] > os_score["Linux"]:
-        return "Windows"
-    elif os_score["Linux"] > os_score["Windows"]:
-        return "Linux"
-    else:
-        return "Unknown"
-
 # Example usage
-ip_address = "192.168.1.100"
-result = identify_os(ip_address)
-print(f"{ip_address} appears to be: {result}")
+ip = "192.168.1.100"
+username = "Administrator"           # or "DOMAIN\\username"
+password = "your_password"
+
+verify_winrm_credentials(ip, username, password)
