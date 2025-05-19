@@ -1,12 +1,10 @@
-import nmap
-import platform
-import subprocess
 import socket
+import subprocess
+import platform
 import re
 
-def get_ttl(ip):
+def ping_ttl(ip):
     try:
-        # Cross-platform ping
         if platform.system().lower() == "windows":
             output = subprocess.check_output(["ping", "-n", "1", ip], timeout=3).decode()
         else:
@@ -17,48 +15,39 @@ def get_ttl(ip):
     except Exception:
         return None
 
-def analyze_ttl(ttl):
-    if ttl is None:
-        return None
-    elif ttl <= 64:
-        return "Linux"
-    elif ttl <= 128:
-        return "Windows"
-    elif ttl <= 255:
-        return "Unix"
-    return None
-
-def scan_ports(ip):
-    scanner = nmap.PortScanner()
+def check_port(ip, port, timeout=2):
     try:
-        scanner.scan(ip, arguments='-Pn -p 22,135,139,445,3389,5985,111,80,443')
-        ports = scanner[ip]['tcp']
-        return ports
-    except Exception as e:
-        return {}
+        with socket.create_connection((ip, port), timeout=timeout):
+            return True
+    except:
+        return False
 
 def identify_os(ip):
     os_score = {"Windows": 0, "Linux": 0}
     
-    # Step 1: TTL hint
-    ttl = get_ttl(ip)
-    ttl_guess = analyze_ttl(ttl)
-    if ttl_guess == "Windows":
-        os_score["Windows"] += 1
-    elif ttl_guess == "Linux":
-        os_score["Linux"] += 1
-
-    # Step 2: Port checks
-    ports = scan_ports(ip)
-    for port in ports:
-        if port == 22:
-            os_score["Linux"] += 2  # SSH default
-        elif port == 3389 or port == 5985 or port == 445 or port == 135:
-            os_score["Windows"] += 2
-        elif port == 111:
+    # TTL hint
+    ttl = ping_ttl(ip)
+    if ttl:
+        if ttl <= 64:
             os_score["Linux"] += 1
+        elif ttl <= 128:
+            os_score["Windows"] += 1
+    
+    # Port checks
+    ports = {
+        22: "Linux",        # SSH
+        3389: "Windows",    # RDP
+        445: "Windows",     # SMB
+        135: "Windows",     # RPC
+        5985: "Windows",    # WinRM HTTP
+        111: "Linux"        # RPCBind
+    }
 
-    # Step 3: Decision
+    for port, os_name in ports.items():
+        if check_port(ip, port):
+            os_score[os_name] += 2
+
+    # Final decision
     if os_score["Windows"] > os_score["Linux"]:
         return "Windows"
     elif os_score["Linux"] > os_score["Windows"]:
