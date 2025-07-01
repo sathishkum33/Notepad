@@ -1,21 +1,57 @@
-Thank You and Farewell
+🛠 Step 1: Check and Set SELinux to Permissive Mode
 
-Dear All,
+SELinux (Security-Enhanced Linux) can interfere with certain services and installations. This step ensures that it is set to Permissive mode if it is currently Enforcing.
 
-As I prepare to move on to a new team, I wanted to take a moment to express my heartfelt thanks to everyone I've had the pleasure of working with during my time here.
+🔍 1.1 Verify SELinux Status
 
-A special thanks to my Line Managers for your constant support, guidance, and encouragement throughout my journey. Your leadership has been truly motivating and appreciated.
+Run the following command to check the current SELinux status:
 
-To the developers and testers – it’s been a great experience collaborating with you. Thank you for your patience, teamwork, and the shared commitment to building and delivering quality products.
+sestatus
 
-To my DevOps team – I couldn’t have asked for a better group of people to work alongside. Your dedication, technical excellence, and camaraderie made every challenge more manageable and every win more meaningful.
+Example output:
 
-A big thank you as well to the management team for fostering a positive work environment and providing the resources and direction that enabled our success.
+SELinux status:                 enabled
+Current mode:                   enforcing
 
-While I’m excited about the new opportunities ahead, I’ll always look back on this chapter with gratitude. Please do keep in touch – I’d be happy to connect via [LinkedIn/email/any platform if you wish to share].
+> ✅ If SELinux status is disabled, you can skip the next step.
+⚠️ If Current mode is enforcing, proceed to set it to permissive.
 
-Wishing you all continued success!
 
-Warm regards,
-[Your Full Name]
-[Your Email or Contact Info, optional]
+
+
+---
+
+🔧 1.2 Set SELinux to Permissive Temporarily
+
+This change will be lost after reboot.
+
+sudo setenforce 0
+
+Verify again:
+
+sestatus
+
+Expected output:
+
+Current mode:                   permissive
+
+
+---
+
+🔧 1.3 (Optional) Set SELinux to Permissive Permanently
+
+Edit the SELinux configuration file:
+
+sudo vi /etc/selinux/config
+
+Find the line:
+
+SELINUX=enforcing
+
+Change it to:
+
+SELINUX=permissive
+
+Save and exit the file, then reboot your system:
+
+sudo reboot
