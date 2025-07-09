@@ -1,57 +1,91 @@
-🛠 Step 1: Check and Set SELinux to Permissive Mode
+✅ 1. Backup Your Database
 
-SELinux (Security-Enhanced Linux) can interfere with certain services and installations. This step ensures that it is set to Permissive mode if it is currently Enforcing.
+Before anything else, make a full backup to avoid data loss.
 
-🔍 1.1 Verify SELinux Status
+cd /path/to/old-neo4j
+bin/neo4j stop   # stop Neo4j if it's running
 
-Run the following command to check the current SELinux status:
+# Optional: backup using neo4j-admin
+bin/neo4j-admin dump --database=neo4j --to=/path/to/backup/neo4j.dump
 
-sestatus
+Alternatively, copy the entire data/databases and data/transactions directories:
 
-Example output:
+cp -r data/databases /path/to/backup/
+cp -r data/transactions /path/to/backup/
 
-SELinux status:                 enabled
-Current mode:                   enforcing
 
-> ✅ If SELinux status is disabled, you can skip the next step.
-⚠️ If Current mode is enforcing, proceed to set it to permissive.
+---
+
+✅ 2. Download the New Version
+
+Download the new tarball from Neo4j Download Center.
+
+wget https://neo4j.com/artifact.php?name=neo4j-community-5.x.x-unix.tar.gz -O neo4j-community-new.tar.gz
+tar -xvzf neo4j-community-new.tar.gz
+mv neo4j-community-5.x.x /opt/neo4j-new
+
+
+---
+
+✅ 3. Compare and Merge Configuration Files
+
+Carefully migrate config changes from your old version to the new one.
+
+diff /old-neo4j/conf/neo4j.conf /opt/neo4j-new/conf/neo4j.conf
+
+Manually copy or merge custom settings like:
+
+dbms.default_listen_address
+
+dbms.connector.bolt.listen_address
+
+dbms.connector.http.listen_address
+
+dbms.security.auth_enabled
+
+Any memory or performance settings you changed.
+
+
+
+---
+
+✅ 4. Move the Data
+
+If you’re not restoring from a dump, copy the data directories to the new version:
+
+cp -r /old-neo4j/data/databases /opt/neo4j-new/data/
+cp -r /old-neo4j/data/transactions /opt/neo4j-new/data/
+
+> ⚠️ Important: Neo4j may auto-upgrade the data format if moving from a major version (e.g., 4.x to 5.x), but you cannot downgrade after this.
 
 
 
 
 ---
 
-🔧 1.2 Set SELinux to Permissive Temporarily
+✅ 5. Start the New Version
 
-This change will be lost after reboot.
+cd /opt/neo4j-new
+bin/neo4j start
 
-sudo setenforce 0
-
-Verify again:
-
-sestatus
-
-Expected output:
-
-Current mode:                   permissive
+Check logs in logs/neo4j.log and logs/debug.log to ensure startup is successful.
 
 
 ---
 
-🔧 1.3 (Optional) Set SELinux to Permissive Permanently
+✅ 6. Test Thoroughly
 
-Edit the SELinux configuration file:
+Use cypher-shell or Browser to query data.
 
-sudo vi /etc/selinux/config
+Monitor logs for warnings.
 
-Find the line:
+Validate custom plugins or procedures if any (they may need updates).
 
-SELINUX=enforcing
 
-Change it to:
 
-SELINUX=permissive
+---
 
-Save and exit the file, then reboot your system:
+🔁 Optional: Restore from Dump (if preferred)
 
-sudo reboot
+bin/neo4j-admin load --from=/path/to/backup/neo4j.dump --database=neo4j --force
+
