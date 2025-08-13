@@ -1,13 +1,13 @@
-FROM apache/airflow:2.9.0  # Use your Airflow version
+import socket
 
-# Switch to root to install Linux packages
-USER root
+def ping_tcp(host, port=22, timeout=2):
+    try:
+        socket.setdefaulttimeout(timeout)
+        with socket.create_connection((host, port)):
+            return True
+    except OSError:
+        return False
 
-# Install ping command
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    iputils-ping \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
-
-# Switch back to airflow user (important for Airflow runtime)
-USER airflow
+# Example: test SSH port
+print(ping_tcp("github.com", 22))   # True if SSH reachable
+print(ping_tcp("example.com", 22))  # Might be False if port closed
