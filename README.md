@@ -1,3 +1,17 @@
-I’d like to check if it’s feasible to enable APM monitoring on the XVZ application. This application is part of the FFG Project and is not associated with any Catalyst event.
-Could you please confirm if APM monitoring can be enabled on COP for this application? If yes, kindly advise on the next steps or requirements.
-Thanks in advance for your support.
+#!/bin/bash
+set -e
+
+# Usage: send_file.sh <local_file> <user> <host> <remote_path>
+
+LOCAL_FILE=$1
+USER=$2
+HOST=$3
+REMOTE_PATH=$4
+
+if [[ -z "$LOCAL_FILE" || -z "$USER" || -z "$HOST" || -z "$REMOTE_PATH" ]]; then
+    echo "Usage: $0 <local_file> <user> <host> <remote_path>"
+    exit 1
+fi
+
+# Send file using sftp (passwordless recommended with ssh keys)
+sftp -o StrictHostKeyChecking=no "$USER@$HOST:$REMOTE_PATH" <<< $"put $LOCAL_FILE"
