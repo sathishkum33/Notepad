@@ -1,17 +1,15 @@
-#!/bin/bash
-set -e
+FROM registry.access.redhat.com/ubi9/ubi:latest
 
-# Usage: send_file.sh <local_file> <user> <host> <remote_path>
+ARG ARTIFACTORY_URL
+ARG ARTIFACTORY_USER
+ARG ARTIFACTORY_API_KEY
+ARG POSTGRES_RPM_PATH
 
-LOCAL_FILE=$1
-USER=$2
-HOST=$3
-REMOTE_PATH=$4
+RUN dnf install -y wget && \
+    wget --user=${ARTIFACTORY_USER} --password=${ARTIFACTORY_API_KEY} \
+    "${ARTIFACTORY_URL}/${POSTGRES_RPM_PATH}" -O /tmp/postgresql.rpm && \
+    dnf localinstall -y /tmp/postgresql.rpm && \
+    rm -f /tmp/postgresql.rpm && \
+    dnf clean all
 
-if [[ -z "$LOCAL_FILE" || -z "$USER" || -z "$HOST" || -z "$REMOTE_PATH" ]]; then
-    echo "Usage: $0 <local_file> <user> <host> <remote_path>"
-    exit 1
-fi
-
-# Send file using sftp (passwordless recommended with ssh keys)
-sftp -o StrictHostKeyChecking=no "$USER@$HOST:$REMOTE_PATH" <<< $"put $LOCAL_FILE"
+USER postgres
