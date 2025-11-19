@@ -1,9 +1,4 @@
-
-Hi John,
-I would like to express my sincere appreciation for your exceptional support over the past few months. You played a key role in setting up the ADO dedicated agent for the DTX application, and your efforts have made a significant impact.
-Thank you for tirelessly working through multiple installation attempts on the non-prod ADO environments, exploring different approaches, and ensuring everything was thoroughly tested. Your persistence and dedication were instrumental in finally making the agent available on the production ADO.
-We truly appreciate your hard work, commitment, and continuous support throughout this process.
-Thank you once again for your outstanding contribution.
-
-
-Appreciation for Your Outstanding Support
+1. Ownership & Execution (CITO Project)
+During the CITO project, I demonstrated strong ownership by independently handling multiple critical activities. This included migrating AWS classes to on-prem environments, performing server scale-in initiatives to reduce infrastructure costs, and leading the database migration with HashiCorp enablement. I also set up end-to-end pipelines for various migration approaches to support microservice movement from GDCE to GDCW. Throughout these tasks, I ensured timely execution, maintained high quality, and proactively resolved challenges without external dependency.
+2. Collaboration & Customer Focus (TRX / BTPX Project)
+For the BTPX project, I worked closely with Capgemini and RS vendor teams, repeatedly setting up environments to meet bank standards and ensure compliance. My proactive and timely technical support was recognized and appreciated by the vendor, reflecting my commitment to partnership and stakeholder satisfaction. Additionally, I independently created ADO templates without KT or support from the ADO team, successfully implementing DTX agents and templates with zero issues and meeting deadlines. I also supported the ONETS project by addressing all DevOps-related requirements, ensuring seamless delivery and operational stability.
