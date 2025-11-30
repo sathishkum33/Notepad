@@ -1,4 +1,36 @@
-1. Ownership & Execution (CITO Project)
-During the CITO project, I demonstrated strong ownership by independently handling multiple critical activities. This included migrating AWS classes to on-prem environments, performing server scale-in initiatives to reduce infrastructure costs, and leading the database migration with HashiCorp enablement. I also set up end-to-end pipelines for various migration approaches to support microservice movement from GDCE to GDCW. Throughout these tasks, I ensured timely execution, maintained high quality, and proactively resolved challenges without external dependency.
-2. Collaboration & Customer Focus (TRX / BTPX Project)
-For the BTPX project, I worked closely with Capgemini and RS vendor teams, repeatedly setting up environments to meet bank standards and ensure compliance. My proactive and timely technical support was recognized and appreciated by the vendor, reflecting my commitment to partnership and stakeholder satisfaction. Additionally, I independently created ADO templates without KT or support from the ADO team, successfully implementing DTX agents and templates with zero issues and meeting deadlines. I also supported the ONETS project by addressing all DevOps-related requirements, ensuring seamless delivery and operational stability.
+# Subquery to get Environment from Instance table
+    env_subquery = Instance.objects.filter(
+        Application__Application=application,
+        Server__ComputeName=OuterRef('Server__ComputeName')
+    ).values('Environment__name')[:1]
+
+    # Base Server list (from Server or Instance model)
+    server_list = Server.objects.values(
+        "Application__Application",
+        "Server__Hostname",
+        "Server__RAM",
+        "Server__CPU",
+        "Server__Status",
+        "Server__OS",
+        "Server__ComputeName",
+    ).annotate(
+        Environment=Subquery(env_subquery),    # ← pulls env if exists, empty if not
+        Usage_Type=Value("APP", output_field=CharField())
+    )
+
+    # Database list
+    db_list = Database.objects.values(
+        "Application__Application",
+        "Server__Hostname",
+        "Server__RAM",
+        "Server__CPU",
+        "Server__Status",
+        "Server__OS",
+        "Server__ComputeName",
+    ).annotate(
+        Environment=Subquery(env_subquery),     # reuses same logic
+        Usage_Type=Value("DB", output_field=CharField())
+    )
+
+    # UNION both
+    final_list = server_list.union(db_list).order_by("Environment", "Usage_Type")
