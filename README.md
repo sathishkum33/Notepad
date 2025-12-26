@@ -1,36 +1,31 @@
-# Subquery to get Environment from Instance table
-    env_subquery = Instance.objects.filter(
-        Application__Application=application,
-        Server__ComputeName=OuterRef('Server__ComputeName')
-    ).values('Environment__name')[:1]
+#!/bin/bash
 
-    # Base Server list (from Server or Instance model)
-    server_list = Server.objects.values(
-        "Application__Application",
-        "Server__Hostname",
-        "Server__RAM",
-        "Server__CPU",
-        "Server__Status",
-        "Server__OS",
-        "Server__ComputeName",
-    ).annotate(
-        Environment=Subquery(env_subquery),    # ← pulls env if exists, empty if not
-        Usage_Type=Value("APP", output_field=CharField())
-    )
+OUTPUT_FILE="pods_dns_report.csv"
 
-    # Database list
-    db_list = Database.objects.values(
-        "Application__Application",
-        "Server__Hostname",
-        "Server__RAM",
-        "Server__CPU",
-        "Server__Status",
-        "Server__OS",
-        "Server__ComputeName",
-    ).annotate(
-        Environment=Subquery(env_subquery),     # reuses same logic
-        Usage_Type=Value("DB", output_field=CharField())
-    )
+# CSV Header
+echo "Namespace,Pod Name,Pod Status,Nameservers" > $OUTPUT_FILE
 
-    # UNION both
-    final_list = server_list.union(db_list).order_by("Environment", "Usage_Type")
+for i in {1..60}; do
+  NAMESPACE="application-$i"
+
+  echo "Processing namespace: $NAMESPACE"
+
+  # Get pod name and status
+  kubectl get pods -n "$NAMESPACE" --no-headers 2>/dev/null | while read POD STATUS REST; do
+
+    # Extract nameservers from /etc/resolv.conf
+    NAMESERVERS=$(kubectl exec -n "$NAMESPACE" "$POD" -- \
+      cat /etc/resolv.conf 2>/dev/null | \
+      grep "^nameserver" | awk '{print $2}' | paste -sd "|" -)
+
+    # Handle cases where exec is not allowed
+    if [ -z "$NAMESERVERS" ]; then
+      NAMESERVERS="N/A"
+    fi
+
+    echo "$NAMESPACE,$POD,$STATUS,$NAMESERVERS" >> $OUTPUT_FILE
+
+  done
+done
+
+echo "Report generated: $OUTPUT_FILE"
