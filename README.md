@@ -25,36 +25,66 @@ def db_config():
     }
 
 
-# -----------------------------------
-# DB FUNCTIONS
-# -----------------------------------
+# ===================================
+# PUBLIC FUNCTION (CALL THIS ONLY)
+# ===================================
 
 def get_server_details():
     """
-    Fetch list of hostnames from DB
-    Returns: list[str]
+    One-call function:
+    - Fetch servers
+    - Check status concurrently
+    - Update DB
     """
+    servers = _fetch_servers()
+    if not servers:
+        return []
+
+    results = _check_server_status(servers)
+    _update_db_status(results)
+
+    return results
+
+
+# ===================================
+# INTERNAL FUNCTIONS
+# ===================================
+
+def _fetch_servers():
     conn = None
     try:
         conn = psycopg2.connect(**db_config())
         cur = conn.cursor()
-
-        cur.execute(
-            'SELECT hostname FROM reports_app_servertbl'
-        )
-
+        cur.execute('SELECT hostname FROM reports_app_servertbl')
         return [row[0] for row in cur.fetchall()]
-
     finally:
         if conn:
             conn.close()
 
 
-def update_db_status(results):
-    """
-    Bulk update server status
-    results: list of (hostname, status)
-    """
+def _check_server_status(hostnames):
+    results = []
+
+    def _check(host):
+        if not _ping_host(host):
+            return host, "Down"
+        if not _is_port_open(host):
+            return host, "Down"
+        return host, "UP"
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [executor.submit(_check, host) for host in hostnames]
+
+        for future in as_completed(futures):
+            try:
+                results.append(future.result())
+            except Exception:
+                pass
+
+    return results
+
+
+def _update_db_status(results):
     if not results:
         return
 
@@ -77,17 +107,17 @@ def update_db_status(results):
             conn.close()
 
 
-# -----------------------------------
-# NETWORK CHECK FUNCTIONS
-# -----------------------------------
+# ===================================
+# NETWORK HELPERS
+# ===================================
 
-def ping_host(hostname):
+def _ping_host(hostname):
     param = "-n" if platform.system().lower() == "windows" else "-c"
-    command = ["ping", param, "1", "-W", str(PING_TIMEOUT), hostname]
+    cmd = ["ping", param, "1", "-W", str(PING_TIMEOUT), hostname]
 
     try:
         return subprocess.run(
-            command,
+            cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         ).returncode == 0
@@ -95,39 +125,9 @@ def ping_host(hostname):
         return False
 
 
-def is_port_open(hostname, port=SSH_PORT):
+def _is_port_open(hostname, port=SSH_PORT):
     try:
         with socket.create_connection((hostname, port), timeout=PORT_TIMEOUT):
             return True
     except Exception:
         return False
-
-
-# -----------------------------------
-# CORE FUNCTION
-# -----------------------------------
-
-def check_server_status(hostnames):
-    """
-    Concurrently checks server status
-    Returns: list of (hostname, status)
-    """
-    results = []
-
-    def _check(host):
-        if not ping_host(host):
-            return host, "Down"
-        if not is_port_open(host):
-            return host, "Down"
-        return host, "UP"
-
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = [executor.submit(_check, host) for host in hostnames]
-
-        for future in as_completed(futures):
-            try:
-                results.append(future.result())
-            except Exception:
-                pass
-
-    return results
