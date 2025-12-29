@@ -1,31 +1,133 @@
-#!/bin/bash
+import socket
+import subprocess
+import platform
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import psycopg2
+from psycopg2.extras import execute_batch
 
-OUTPUT_FILE="pods_dns_report.csv"
+# -----------------------------------
+# CONFIG
+# -----------------------------------
 
-# CSV Header
-echo "Namespace,Pod Name,Pod Status,Nameservers" > $OUTPUT_FILE
+MAX_WORKERS = 50
+PING_TIMEOUT = 2
+PORT_TIMEOUT = 3
+SSH_PORT = 22
 
-for i in {1..60}; do
-  NAMESPACE="application-$i"
 
-  echo "Processing namespace: $NAMESPACE"
+def db_config():
+    return {
+        "host": "DB_HOST",
+        "database": "DB_NAME",
+        "user": "DB_USER",
+        "password": "DB_PASSWORD",
+        "port": 5432
+    }
 
-  # Get pod name and status
-  kubectl get pods -n "$NAMESPACE" --no-headers 2>/dev/null | while read POD STATUS REST; do
 
-    # Extract nameservers from /etc/resolv.conf
-    NAMESERVERS=$(kubectl exec -n "$NAMESPACE" "$POD" -- \
-      cat /etc/resolv.conf 2>/dev/null | \
-      grep "^nameserver" | awk '{print $2}' | paste -sd "|" -)
+# -----------------------------------
+# DB FUNCTIONS
+# -----------------------------------
 
-    # Handle cases where exec is not allowed
-    if [ -z "$NAMESERVERS" ]; then
-      NAMESERVERS="N/A"
-    fi
+def get_server_details():
+    """
+    Fetch list of hostnames from DB
+    Returns: list[str]
+    """
+    conn = None
+    try:
+        conn = psycopg2.connect(**db_config())
+        cur = conn.cursor()
 
-    echo "$NAMESPACE,$POD,$STATUS,$NAMESERVERS" >> $OUTPUT_FILE
+        cur.execute(
+            'SELECT hostname FROM reports_app_servertbl'
+        )
 
-  done
-done
+        return [row[0] for row in cur.fetchall()]
 
-echo "Report generated: $OUTPUT_FILE"
+    finally:
+        if conn:
+            conn.close()
+
+
+def update_db_status(results):
+    """
+    Bulk update server status
+    results: list of (hostname, status)
+    """
+    if not results:
+        return
+
+    conn = None
+    try:
+        conn = psycopg2.connect(**db_config())
+        cur = conn.cursor()
+
+        query = """
+            UPDATE reports_app_servertbl
+            SET "Status" = %s
+            WHERE hostname = %s
+        """
+
+        execute_batch(cur, query, [(status, host) for host, status in results])
+        conn.commit()
+
+    finally:
+        if conn:
+            conn.close()
+
+
+# -----------------------------------
+# NETWORK CHECK FUNCTIONS
+# -----------------------------------
+
+def ping_host(hostname):
+    param = "-n" if platform.system().lower() == "windows" else "-c"
+    command = ["ping", param, "1", "-W", str(PING_TIMEOUT), hostname]
+
+    try:
+        return subprocess.run(
+            command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        ).returncode == 0
+    except Exception:
+        return False
+
+
+def is_port_open(hostname, port=SSH_PORT):
+    try:
+        with socket.create_connection((hostname, port), timeout=PORT_TIMEOUT):
+            return True
+    except Exception:
+        return False
+
+
+# -----------------------------------
+# CORE FUNCTION
+# -----------------------------------
+
+def check_server_status(hostnames):
+    """
+    Concurrently checks server status
+    Returns: list of (hostname, status)
+    """
+    results = []
+
+    def _check(host):
+        if not ping_host(host):
+            return host, "Down"
+        if not is_port_open(host):
+            return host, "Down"
+        return host, "UP"
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [executor.submit(_check, host) for host in hostnames]
+
+        for future in as_completed(futures):
+            try:
+                results.append(future.result())
+            except Exception:
+                pass
+
+    return results
