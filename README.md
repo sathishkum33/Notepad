@@ -1,20 +1,13 @@
-from datetime import datetime, timedelta
-from jose import jwt
-from passlib.context import CryptContext
+from fastapi import APIRouter, HTTPException
+from app.core.security import create_access_token, verify_password
 
-SECRET_KEY = "super-secret"
-ALGORITHM = "HS256"
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
-pwd_context = CryptContext(schemes=["bcrypt"])
+@router.post("/login")
+def login(email: str, password: str):
+    user = fake_get_user(email)
+    if not user or not verify_password(password, user.password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
-def hash_password(password: str):
-    return pwd_context.hash(password)
-
-def verify_password(password, hashed):
-    return pwd_context.verify(password, hashed)
-
-def create_access_token(data: dict, expires_minutes=15):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    token = create_access_token({"sub": user.id})
+    return {"access_token": token}
