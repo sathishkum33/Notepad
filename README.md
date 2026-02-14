@@ -1,17 +1,15 @@
-import axios, {
-  AxiosError,
-  InternalAxiosRequestConfig,
-} from "axios";
+import axios, { AxiosError } from "axios";
+import type { InternalAxiosRequestConfig } from "axios";
 import type { RefreshResponse } from "../types/auth";
 
 const API_BASE_URL = "http://localhost:8000";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // required for HttpOnly refresh cookie
+  withCredentials: true,
 });
 
-// In-memory token
+// In-memory access token
 let accessToken: string | null = null;
 
 export const setAccessToken = (token: string | null) => {
@@ -22,7 +20,6 @@ export const getAccessToken = () => accessToken;
 
 /**
  * REQUEST INTERCEPTOR
- * Attach access token to every request
  */
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -35,7 +32,6 @@ api.interceptors.request.use(
 
 /**
  * RESPONSE INTERCEPTOR
- * Handle token refresh
  */
 api.interceptors.response.use(
   (response) => response,
@@ -52,7 +48,6 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // IMPORTANT: use plain axios to avoid infinite loop
         const response = await axios.post<RefreshResponse>(
           `${API_BASE_URL}/refresh`,
           {},
@@ -63,7 +58,6 @@ api.interceptors.response.use(
 
         setAccessToken(newAccessToken);
 
-        // update header safely
         originalRequest.headers.set(
           "Authorization",
           `Bearer ${newAccessToken}`
