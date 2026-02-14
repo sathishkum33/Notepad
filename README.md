@@ -1,50 +1,43 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-} from "react";
-import { loginUser, logoutUser } from "../api/authService";
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-interface AuthContextType {
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-}
+const Login = () => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-const AuthContext = createContext<AuthContextType | null>(null);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
-};
-
-interface Props {
-  children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: Props) => {
-  const [isAuthenticated, setIsAuthenticated] =
-    useState<boolean>(false);
-
-  const login = async (email: string, password: string) => {
-    await loginUser({ email, password });
-    setIsAuthenticated(true);
-  };
-
-  const logout = async () => {
-    await logoutUser();
-    setIsAuthenticated(false);
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    try {
+      await login(email, password);
+      navigate("/dashboard");
+    } catch {
+      alert("Login failed");
+    }
   };
 
   return (
-    <AuthContext.Provider
-      value={{ isAuthenticated, login, logout }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+      />
+      <button type="submit">Login</button>
+    </form>
   );
 };
+
+export default Login;
