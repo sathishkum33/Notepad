@@ -1,43 +1,33 @@
-import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+#!/bin/bash
+# start_airflow.sh
+# Exit on any error
+set -e
 
-const Login = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+echo "Starting all Airflow components..."
 
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+# Start components in the background and store their PIDs
+airflow scheduler &
+PIDS[0]=$!
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
-    e.preventDefault();
-    try {
-      await login(email, password);
-      navigate("/dashboard");
-    } catch {
-      alert("Login failed");
-    }
-  };
+airflow dag-processor &
+PIDS[1]=$!
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Password"
-      />
-      <button type="submit">Login</button>
-    </form>
-  );
-};
+airflow triggerer &
+PIDS[2]=$!
 
-export default Login;
+airflow api-server --port 8080 &
+PIDS[3]=$!
+
+# Function to clean up and kill all background processes
+cleanup() {
+    echo "Shutting down all Airflow components..."
+    for pid in "${PIDS[@]}"; do
+        kill "$pid" 2>/dev/null
+    done
+}
+
+# Trap EXIT and INT signals to run cleanup
+trap cleanup EXIT INT
+
+# Wait for all background processes
+wait
